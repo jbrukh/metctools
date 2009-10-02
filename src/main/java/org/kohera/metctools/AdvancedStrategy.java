@@ -102,7 +102,6 @@ public class AdvancedStrategy extends Strategy
 		}
 		
 		/** BEGIN -- FOR METC VERSION 1.5 **/
-		
 		public OrderID sendOrder(OrderSingle order) {
 			return AdvancedStrategy.this.sendOrder(order);
 		}

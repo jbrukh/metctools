@@ -10,7 +10,7 @@ import org.marketcetera.marketdata.MarketDataRequest;
 import org.marketcetera.trade.ExecutionReport;
 import org.marketcetera.trade.MSymbol;
 
-public class PortfolioStrategy extends AdvancedStrategy {
+public abstract class PortfolioStrategy extends AdvancedStrategy {
 
 	/**
 	 * Internal class that routes execution reports to the appropriate
@@ -58,16 +58,24 @@ public class PortfolioStrategy extends AdvancedStrategy {
 	 * @param dataProvider
 	 * @throws ClientInitException
 	 */
-	public PortfolioStrategy( String dataProvider ) throws ClientInitException {
+	public PortfolioStrategy() throws ClientInitException {
 		super();
 		
 		portfolio = new PortfolioImpl();
-		this.dataProvider = dataProvider;
+		this.dataProvider = returnDataProvider();
 		
 		/* route execution reports and trades to the portfolio */
 		addDelegate( new TradeRouter() );
 	}
 
+	/**
+	 * Must override this method to return the data provider for
+	 * the strategy.
+	 * 
+	 * @return
+	 */
+	public abstract String returnDataProvider();
+	
 	/**
 	 * Get the data provider.
 	 * 
