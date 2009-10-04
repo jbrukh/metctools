@@ -2,130 +2,335 @@ package org.kohera.metctools.portfolio;
 
 import java.math.BigDecimal;
 
+import org.kohera.metctools.util.OrderBuilder;
+import org.kohera.metctools.util.Timer;
+import org.kohera.metctools.util.Timer.Task;
+import org.kohera.metctools.util.Timer.TaskThread;
 import org.kohera.metctools.AdvancedStrategy;
 import org.marketcetera.event.TradeEvent;
+import org.marketcetera.trade.BrokerID;
 import org.marketcetera.trade.ExecutionReport;
 import org.marketcetera.trade.MSymbol;
 import org.marketcetera.trade.OrderID;
+import org.marketcetera.trade.OrderSingle;
+import org.marketcetera.trade.OrderStatus;
 
-public interface Trade {
+public class Trade implements ITrade {
+
+	/* internal fields  */
+	transient private AdvancedStrategy parentStrategy;
+
+	/* fields for accounting */
+	private final MSymbol symbol;
+	private BigDecimal quantity;
+	private BigDecimal leavesQuantity;
+	private BigDecimal pendingQuantity;
+	private Side side;
+	private Side pendingSide;
+	private OrderID pendingOrderId;
+	private BigDecimal costBasis;
+	private TradeEvent lastTrade;
+
+	/* fields for trading */
+	private final OrderBuilder orderBuilder;
+	private final Timer timer;
+	private long orderTimeout;
+	private TaskThread orderTimeoutThr;
+	public OrderTimeoutPolicy orderTimeoutPolicy;
+	
+	
+	public Trade( AdvancedStrategy parent, MSymbol symbol, BrokerID brokerId, String account ) {
+		this.symbol = symbol;
+		parentStrategy = parent;
+		quantity = leavesQuantity = pendingQuantity = BigDecimal.ZERO;
+		costBasis = BigDecimal.ZERO;
+		pendingOrderId = null;
+		lastTrade = null;
+		side = pendingSide = Side.NONE;
+		orderBuilder = new OrderBuilder(brokerId,account);
+		timer = new Timer();
+		
+		orderTimeoutPolicy = OrderTimeoutPolicies.ON_TIMEOUT_WARN;
+		orderTimeout = 60*1000;
+	}
+
+	/* GETTERS */
+	
+	@Override
+	public BigDecimal getCostBasis() {
+		return costBasis;
+	}
+
+	@Override
+	public BigDecimal getLeavesQuantity() {
+		return leavesQuantity;
+	}
+
+	@Override
+	public BigDecimal getPendingQuantity() {
+		return pendingQuantity;
+	}
+
+	@Override
+	public BigDecimal getQuantity() {
+		return quantity;
+	}
+
+	@Override
+	public MSymbol getSymbol() {
+		return symbol;
+	}
+
+	@Override
+	public boolean isFilling() {
+		return (pendingOrderId!=null && leavesQuantity.compareTo(BigDecimal.ZERO)!=0);
+	}
+
+	@Override
+	public boolean isPending() {
+		return (pendingOrderId!=null);
+	}
+	
+	@Override
+	public OrderID getPendingOrderID() {
+		return pendingOrderId;
+	}
+
+	@Override
+	public Side getSide() {
+		return side;
+	}
+
+	@Override
+	public BigDecimal getSignedQuantity() {
+		return quantity.multiply(side.toBigDecimal());
+	}
+
+	@Override
+	public Side getPendingSide() {
+		return pendingSide;
+	}
+	
+	@Override
+	public BigDecimal getLastPrice() {
+		if (lastTrade==null) return BigDecimal.ZERO;
+		return lastTrade.getPrice();
+	}
+
+	@Override
+	public TradeEvent getLastTrade() {
+		return lastTrade;
+	}
+	
+	@Override
+	public BigDecimal getProfitLoss() {
+		if (lastTrade==null) return BigDecimal.ZERO;
+		return
+		lastTrade.getPrice().subtract(costBasis).multiply(
+				side.toBigDecimal()).multiply(quantity);
+	}
+
+	@Override
+	public BigDecimal getFillingQuantity() {
+		BigDecimal polarity = BigDecimal.valueOf(side.value()*pendingSide.value(),0);
+		BigDecimal alreadyFilled = pendingQuantity.subtract(leavesQuantity);
+		return quantity.add( polarity.multiply(alreadyFilled) );
+	}
+	
+	@Override
+	public AdvancedStrategy getParentStrategy() {
+		return parentStrategy;
+	}
+	
+	@Override
+	public void acceptTrade(TradeEvent tradeEvent) {
+		lastTrade = tradeEvent;
+	}
 
 	/**
-	 * Returns the symbol associated with this trade.
-	 */
-	public MSymbol getSymbol();
-	
-	/**
-	 * Returns the current unsigned position of the trade (not including unfilled or filling orders).
-	 * @return
-	 */
-	public BigDecimal getQuantity();
-	
-	/**
-	 * Returns the current signed position of the trade (not including unfilled or filling orders).
-	 * @return
-	 */
-	public BigDecimal getSignedQuantity();
-	
-	/**
-	 * Returns the side of the trade.
-	 * @return
-	 */
-	public Side getSide();
-	
-	/**
-	 * Returns the quantity of shares that is currently being filled.
-	 * @return
-	 */
-	public BigDecimal getPendingQuantity();
-	
-	/**
-	 * Returns the portion of the pending position that has not yet been filled.
-	 * @return
-	 */
-	public BigDecimal getLeavesQuantity();
-	
-	/**
-	 * Returns the side of the order pending completion.
-	 * @return
-	 */
-	public Side getPendingSide();
-	
-	/**
-	 * Returns true if and only if there is an outstanding order for this trade.
-	 * @return
-	 */
-	public boolean isPending();
-	
-	/**
-	 * Returns true if and only if this trade is currently filling.
-	 * @return
-	 */
-	public boolean isFilling();
-	
-	/**
-	 * Returns the cost basis (entry price) for this trade.
-	 * @return
-	 */
-	public BigDecimal getCostBasis();
-	
-	/**
-	 * Return the OrderID of the pending order (or null).
-	 * @return
-	 */
-	public OrderID getPendingOrderID();
-	
-	/**
-	 * Returns original position together with the portion of the pending
-	 * position that has already been filled.  If the trade is not filling,
-	 * then it returns the same as getQuantity().
+	 * Adjusts the trade information based on an incoming execution report.
 	 * 
-	 * If the fills up to this point have changed the side of the original trade,
-	 * the quantity returned will have a negative sign.
-	 * 
-	 * @return
-	 */
-	public BigDecimal getFillingQuantity();
-	
-	/**
-	 * Returns the last trade event for this Trade.
-	 * @return
-	 */
-	public TradeEvent getLastTrade();
-	
-	/**
-	 * Returns the last trade price.
-	 * @return
-	 */
-	public BigDecimal getLastPrice();
-
-	/**
-	 * Returns the profit-loss relative to the last trade price.
-	 * @return
-	 */
-	public BigDecimal getProfitLoss();
-
-	/**
-	 * Updates the state of the trade based on a TradeEvent.
-	 * 
-	 * @param tradeEvent
-	 */
-	public void acceptTrade(TradeEvent tradeEvent);
-
-	/**
-	 * Updates the state of the trade based on a new ExecutionReport.
+	 * TODO: WARNING: In the current implementation, ProfitLoss may not be correct if
+	 * the trade switches sides.
 	 * 
 	 * @param sender
 	 * @param report
 	 */
-	public void acceptExecutionReport(AdvancedStrategy sender, ExecutionReport report);
+	@Override
+	public final void acceptExecutionReport(AdvancedStrategy sender,
+			ExecutionReport report) {
+		/* check the correct symbol */
+		if ( symbol!=report.getSymbol()) {
+			sender.getRelay().warn(
+					symbol + ": received external execution report (ignoring).");
+			return;
+		}
+		
+		/* check the correct order id */
+		if ( !isPending() || pendingOrderId!=report.getOrderID()) {
+			sender.getRelay().warn(
+					symbol + ": received external execution report (accepting).");
+		}
+		
+		pendingSide = Side.fromMetcSide(report.getSide());
+		pendingQuantity = report.getCumulativeQuantity();
+		leavesQuantity = report.getLeavesQuantity();
 
-	public AdvancedStrategy getParentStrategy();
+		/* assign a side if you haven't already */
+		if (side==Side.NONE) {
+			side = pendingSide;
+		}
+		
+			
+		/* if this is the last report... */
+		if ( report.getOrderStatus() == OrderStatus.Filled ) {
+			
+			/* check the polarity */
+			BigDecimal polarity = BigDecimal.valueOf(side.value()*pendingSide.value(),0); // 1 if same, -1 if opposite
 
-	public void setOrderTimeoutPolicy(OrderTimeoutPolicy policy);
+			/* switch sides if necessary */
+			if ( polarity.compareTo(BigDecimal.ZERO)<0 && pendingQuantity.compareTo(quantity)>0 ) {
+				side = side.opposite();
+			}
+			
+			/* update the position */
+			quantity = quantity.add(polarity.multiply(pendingQuantity));
+			
+			/* update average price */
+			if ( polarity.compareTo(BigDecimal.ZERO)>0 ) {
+				/* calculate average price */
+				BigDecimal totalQty = quantity.add(pendingQuantity);
+				BigDecimal avg = quantity.multiply(costBasis).add(pendingQuantity.multiply(report.getAveragePrice()));
+				costBasis = avg.divide(totalQty, BigDecimal.ROUND_HALF_EVEN);
+			}
+			
+			pendingQuantity = BigDecimal.ZERO;
+			leavesQuantity = BigDecimal.ZERO;  // TODO: check in fact this is zero.		
+		
+			/* kill the timeout thread, if any */
+			if ( orderTimeoutThr!=null ) {
+				timer.kill(orderTimeoutThr);
+			}
+		}
+		
+	}
+	
+	public String toString() {
+		return String.format("{%s:[%.2f]:%s%d@%.4f}",
+				getSymbol(),
+				getLastPrice().floatValue(),
+				(side==Side.BUY?"+":(side==Side.SELL?"-":"")),
+				quantity,
+				costBasis.floatValue());
+	}
 
-	public void setOrderTimeout(long timeout);
 	
 	
+	/**
+	 * TRADING FUNCTIONALITY
+	 */
+
+	@Override
+	public void setOrderTimeoutPolicy( OrderTimeoutPolicy policy ) {
+		orderTimeoutPolicy = policy;
+	}
 	
+	@Override
+	public void setOrderTimeout( long timeout ) {
+		orderTimeout = timeout;
+	}
+	
+	
+	private void sendOrder( OrderSingle order, final long timeout, final OrderTimeoutPolicy policy ) {
+				
+		/* send the order */
+		final OrderID id = order.getOrderID();
+		pendingOrderId = parentStrategy.getRelay().sendOrder(order);
+		parentStrategy.getRelay().info("Sending order " + id + ".");
+		
+		/* create timeout */
+		orderTimeoutThr = timer.fireIn(timeout, new Task() {
+			public void performTask() {
+				orderTimeoutPolicy.onOrderTimeout(parentStrategy, id, timeout);
+			}			
+		});
+	}
+	
+	@Override
+	public void marketOrder( BigDecimal qty, Side side, long timeout, OrderTimeoutPolicy policy ) {
+		OrderSingle order = orderBuilder
+								.makeMarket(symbol, qty, side.toMetcSide())
+								.getOrder();
+		sendOrder(order,timeout,policy);
+	}
+	
+	@Override
+	public void marketOrder( BigDecimal qty, Side side, long timeout ) {
+		marketOrder(qty,side,timeout,orderTimeoutPolicy);
+	}
+
+	@Override
+	public void marketOrder( BigDecimal qty, Side side ) {
+		marketOrder(qty,side,orderTimeout,orderTimeoutPolicy);
+	}
+	
+	@Override
+	public void longTradeMarket(BigDecimal qty, long timeout, OrderTimeoutPolicy policy) {
+		marketOrder(qty,Side.BUY,timeout,policy);
+	}
+
+	@Override
+	public void longTradeMarket(BigDecimal qty, long timeout) {
+		longTradeMarket(qty, timeout, orderTimeoutPolicy);
+	}
+
+	@Override
+	public void longTradeMarket(BigDecimal qty) {
+		longTradeMarket(qty, orderTimeout, orderTimeoutPolicy);
+	}
+
+	@Override
+	public void shortTradeMarket(BigDecimal qty, long timeout, OrderTimeoutPolicy policy) {
+		marketOrder(qty,Side.SELL,timeout,policy);
+	}
+	
+	@Override
+	public void shortTradeMarket(BigDecimal qty, long timeout) {
+		shortTradeMarket(qty, timeout, orderTimeoutPolicy);
+	}
+
+	@Override
+	public void shortTradeMarket(BigDecimal qty) {
+		shortTradeMarket(qty, orderTimeout, orderTimeoutPolicy);
+	}
+	
+	@Override
+	public void closeTradeMarket(long timeout, OrderTimeoutPolicy policy) {
+		reduceTradeMarket(quantity,timeout,policy);
+	}
+	
+	@Override
+	public void closeTradeMarket(long timeout) {
+		closeTradeMarket(timeout,orderTimeoutPolicy);
+	}
+	
+	@Override
+	public void closeTradeMarket() {
+		closeTradeMarket(orderTimeout,orderTimeoutPolicy);
+	}
+
+	@Override
+	public void reduceTradeMarket(BigDecimal qty, long timeout, OrderTimeoutPolicy policy) {
+		marketOrder(qty,side.opposite(),timeout,policy);
+	}
+
+	@Override
+	public void reduceTradeMarket(BigDecimal qty, long timeout) {
+		reduceTradeMarket(qty,timeout,orderTimeoutPolicy);
+	}
+	
+	@Override
+	public void reduceTradeMarket(BigDecimal qty) {
+		reduceTradeMarket(qty,orderTimeout,orderTimeoutPolicy);
+	}
 }

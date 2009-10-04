@@ -93,7 +93,7 @@ public final class Delegator {
 					if ( length == 2 ) {
 						m.invoke(delegate,parent,message);
 					} else if ( length == 1 ) {
-						m.invoke(delegate, parent);
+						m.invoke(delegate,parent);
 					} else throw new RuntimeException("Delegate had too many parameters for method " + m.toString());
 				} catch (Exception e) {
 					e.printStackTrace();
