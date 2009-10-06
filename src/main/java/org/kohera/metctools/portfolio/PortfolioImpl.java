@@ -9,18 +9,18 @@ import org.marketcetera.trade.MSymbol;
 
 public class PortfolioImpl implements Portfolio {
 
-	private Map<MSymbol,ITrade> trades;
+	private Map<MSymbol,Trade> trades;
 	
 	private FillPolicy fillPolicy;
 	private OrderTimeoutPolicy orderTimeoutPolicy;
 	private Long orderTimeout;
 	
 	public PortfolioImpl() {
-		trades = new LinkedHashMap<MSymbol,ITrade>();
+		trades = new LinkedHashMap<MSymbol,Trade>();
 	}
 	
 	@Override
-	public void addTrade(ITrade trade) {
+	public void addTrade(Trade trade) {
 		if ( orderTimeoutPolicy!=null ) {
 			trade.setOrderTimeoutPolicy(orderTimeoutPolicy);
 		}
@@ -37,19 +37,19 @@ public class PortfolioImpl implements Portfolio {
 	}
 
 	@Override
-	public void forEach(Action<ITrade> action) {
-		for ( ITrade t : trades.values() ) {
+	public void forEach(Action<Trade> action) {
+		for ( Trade t : trades.values() ) {
 			action.performAction(t);
 		}
 	}
 
 	@Override
-	public ITrade getTrade(MSymbol symbol) {
+	public Trade getTrade(MSymbol symbol) {
 		return trades.get(symbol);
 	}
 
 	@Override
-	public Collection<ITrade> getTrades() {
+	public Collection<Trade> getTrades() {
 		return trades.values();
 	}
 
@@ -59,7 +59,7 @@ public class PortfolioImpl implements Portfolio {
 	}
 
 	@Override
-	public void removeTrade(ITrade trade) {
+	public void removeTrade(Trade trade) {
 		trades.remove(trade.getSymbol());
 	}
 
@@ -71,9 +71,9 @@ public class PortfolioImpl implements Portfolio {
 	@Override
 	public void setFillPolicy(final FillPolicy policy) {
 		fillPolicy = policy;
-		forEach( new Action<ITrade>() {
+		forEach( new Action<Trade>() {
 			@Override
-			public void performAction(ITrade trade) {
+			public void performAction(Trade trade) {
 				trade.setFillPolicy(policy);
 			}
 		});
@@ -87,9 +87,9 @@ public class PortfolioImpl implements Portfolio {
 	@Override
 	public void setOrderTimeoutPolicy(final OrderTimeoutPolicy policy) {
 		orderTimeoutPolicy = policy;
-		forEach( new Action<ITrade>() {
+		forEach( new Action<Trade>() {
 			@Override
-			public void performAction(ITrade trade) {
+			public void performAction(Trade trade) {
 				trade.setOrderTimeoutPolicy(policy);
 			}
 		});
@@ -108,9 +108,9 @@ public class PortfolioImpl implements Portfolio {
 	@Override
 	public void setOrderTimeout(final long timeout) {
 		orderTimeout = Long.valueOf(timeout);
-		forEach( new Action<ITrade>() {
+		forEach( new Action<Trade>() {
 			@Override
-			public void performAction(ITrade trade) {
+			public void performAction(Trade trade) {
 				trade.setOrderTimeout(timeout);
 			}
 		});
@@ -119,7 +119,7 @@ public class PortfolioImpl implements Portfolio {
 	@Override
 	public BigDecimal getTotalPosition() {
 		BigDecimal sum = BigDecimal.ZERO;
-		for ( ITrade t : trades.values() ) {
+		for ( Trade t : trades.values() ) {
 			sum = sum.add(t.getSignedQuantity());
 		}
 		return sum;

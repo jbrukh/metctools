@@ -15,10 +15,11 @@ import org.marketcetera.trade.OrderID;
 import org.marketcetera.trade.OrderSingle;
 import org.marketcetera.trade.OrderStatus;
 
-public class Trade implements ITrade {
+public class Trade {
 
 	/* internal fields  */
 	transient private DelegatorStrategy parentStrategy;
+	private final OrderProcessor orderProcessor;
 
 	/* fields for accounting */
 	private final MSymbol symbol;
@@ -31,10 +32,9 @@ public class Trade implements ITrade {
 	private BigDecimal costBasis;
 	private TradeEvent lastTrade;
 
-	/* fields for trading */
-	private final OrderBuilder orderBuilder;
-	private final Timer timer;
-	private TaskThread orderTimeoutThr;
+	/* credentials */
+	private final BrokerID brokerId;
+	private final String account;
 
 	/* policies */
 	private long orderTimeout;
@@ -50,83 +50,92 @@ public class Trade implements ITrade {
 		pendingOrderId = null;
 		lastTrade = null;
 		side = pendingSide = Side.NONE;
-		orderBuilder = new OrderBuilder(brokerId,account);
-		timer = new Timer();
+		
+		this.brokerId = brokerId;
+		this.account = account;
 		
 		fillPolicy = FillPolicies.ON_FILL_WARN;
 		orderTimeoutPolicy = OrderTimeoutPolicies.ON_TIMEOUT_WARN;
 		orderTimeout = 60*1000;
+		
+		orderProcessor = new OrderProcessor();
 	}
 
 	/* GETTERS */
+	public BrokerID getBrokerId() {
+		return brokerId;
+	}
+
+	public String getAccount() {
+		return account;
+	}
 	
-	@Override
 	public BigDecimal getCostBasis() {
 		return costBasis;
 	}
 
-	@Override
+	
 	public BigDecimal getLeavesQuantity() {
 		return leavesQuantity;
 	}
 
-	@Override
+	
 	public BigDecimal getPendingQuantity() {
 		return pendingQuantity;
 	}
 
-	@Override
+	
 	public BigDecimal getQuantity() {
 		return quantity;
 	}
 
-	@Override
+	
 	public MSymbol getSymbol() {
 		return symbol;
 	}
 
-	@Override
+	
 	public boolean isFilling() {
 		return (pendingOrderId!=null && leavesQuantity.compareTo(BigDecimal.ZERO)!=0);
 	}
 
-	@Override
+	
 	public boolean isPending() {
 		return (pendingOrderId!=null);
 	}
 	
-	@Override
+	
 	public OrderID getPendingOrderID() {
 		return pendingOrderId;
 	}
 
-	@Override
+	
 	public Side getSide() {
 		return side;
 	}
 
-	@Override
+	
 	public BigDecimal getSignedQuantity() {
 		return quantity.multiply(side.toBigDecimal());
 	}
 
-	@Override
+	
 	public Side getPendingSide() {
 		return pendingSide;
 	}
 	
-	@Override
+	
 	public BigDecimal getLastPrice() {
 		if (lastTrade==null) return BigDecimal.ZERO;
 		return lastTrade.getPrice();
 	}
 
-	@Override
+	
 	public TradeEvent getLastTrade() {
 		return lastTrade;
 	}
 	
-	@Override
+	
 	public BigDecimal getProfitLoss() {
 		if (lastTrade==null) return BigDecimal.ZERO;
 		return
@@ -134,21 +143,24 @@ public class Trade implements ITrade {
 				side.toBigDecimal()).multiply(quantity);
 	}
 
-	@Override
+	
 	public BigDecimal getFillingQuantity() {
 		BigDecimal polarity = BigDecimal.valueOf(side.value()*pendingSide.value(),0);
 		BigDecimal alreadyFilled = pendingQuantity.subtract(leavesQuantity);
 		return quantity.add( polarity.multiply(alreadyFilled) );
 	}
 	
-	@Override
+	
 	public DelegatorStrategy getParentStrategy() {
 		return parentStrategy;
 	}
 	
-	@Override
 	public void acceptTrade(TradeEvent tradeEvent) {
 		lastTrade = tradeEvent;
+	}
+	
+	public OrderProcessor order() {
+		return orderProcessor;
 	}
 
 	/**
@@ -160,7 +172,7 @@ public class Trade implements ITrade {
 	 * @param sender
 	 * @param report
 	 */
-	@Override
+	
 	public final void acceptExecutionReport(DelegatorStrategy sender,
 			ExecutionReport report) {
 		/* check the correct symbol */
@@ -212,9 +224,7 @@ public class Trade implements ITrade {
 			leavesQuantity = BigDecimal.ZERO;  // TODO: check in fact this is zero.		
 		
 			/* kill the timeout thread, if any */
-			if ( orderTimeoutThr!=null ) {
-				timer.kill(orderTimeoutThr);
-			}
+			orderProcessor.killTimeoutThread();
 			
 			/* execute the fill policy, if any */
 			if ( fillPolicy != null ) {
@@ -234,119 +244,123 @@ public class Trade implements ITrade {
 	}
 
 	
-	
-	/**
-	 * TRADING FUNCTIONALITY
-	 */
-
 	public void setFillPolicy( FillPolicy policy ) {
 		fillPolicy = policy;
 	}
 	
-	@Override
+	
 	public void setOrderTimeoutPolicy( OrderTimeoutPolicy policy ) {
 		orderTimeoutPolicy = policy;
 	}
 	
-	@Override
+	
 	public void setOrderTimeout( long timeout ) {
 		orderTimeout = timeout;
 	}
 	
 	
-	private void sendOrder( OrderSingle order, final long timeout, final OrderTimeoutPolicy policy ) {
-				
-		/* send the order */
-		final OrderID id = order.getOrderID();
-		pendingOrderId = parentStrategy.getRelay().sendOrder(order);
-		parentStrategy.getRelay().info("Sending order " + id + ".");
+	/**
+	 * 
+	 * Order Processor.
+	 * 
+	 */
+	private final class OrderProcessor {
 		
-		/* create timeout */
-		orderTimeoutThr = timer.fireIn(timeout, new Task() {
-			public void performTask() {
-				if ( orderTimeoutPolicy!=null ) {
-					orderTimeoutPolicy
-					  .onOrderTimeout(parentStrategy, id, timeout, Trade.this);
-				}
-			}			
-		});
-	}
-	
-	@Override
-	public void marketOrder( BigDecimal qty, Side side, long timeout, OrderTimeoutPolicy policy ) {
-		OrderSingle order = orderBuilder
-								.makeMarket(symbol, qty, side.toMetcSide())
-								.getOrder();
-		sendOrder(order,timeout,policy);
-	}
-	
-	@Override
-	public void marketOrder( BigDecimal qty, Side side, long timeout ) {
-		marketOrder(qty,side,timeout,orderTimeoutPolicy);
-	}
+		private OrderBuilder orderBuilder;
+		private final Timer timer;
+		private TaskThread orderTimeoutThr;
 
-	@Override
-	public void marketOrder( BigDecimal qty, Side side ) {
-		marketOrder(qty,side,orderTimeout,orderTimeoutPolicy);
-	}
-	
-	@Override
-	public void longTradeMarket(BigDecimal qty, long timeout, OrderTimeoutPolicy policy) {
-		marketOrder(qty,Side.BUY,timeout,policy);
-	}
+		
+		public OrderProcessor() {
+			orderBuilder = new OrderBuilder(brokerId,account);
+			timer = new Timer();
+		}
+		
+		private void sendOrder( OrderSingle order, final long timeout, final OrderTimeoutPolicy policy ) {
+					
+			/* send the order */
+			final OrderID id = order.getOrderID();
+			pendingOrderId = parentStrategy.getRelay().sendOrder(order);
+			parentStrategy.getRelay().info("Sending order " + id + ".");
+			
+			/* create timeout */
+			orderTimeoutThr = timer.fireIn(timeout, new Task() {
+				public void performTask() {
+					if ( orderTimeoutPolicy!=null ) {
+						orderTimeoutPolicy
+						  .onOrderTimeout(parentStrategy, id, timeout, Trade.this);
+					}
+				}			
+			});
+		}
+		
+		public void killTimeoutThread() {
+			if ( orderTimeoutThr!=null ) {
+				timer.kill(orderTimeoutThr);
+			}
+		}
+		
+		public void marketOrder( BigDecimal qty, Side side, long timeout, OrderTimeoutPolicy policy ) {
+			OrderSingle order = orderBuilder
+									.makeMarket(symbol, qty, side.toMetcSide())
+									.getOrder();
+			sendOrder(order,timeout,policy);
+		}
+		
+		public void marketOrder( BigDecimal qty, Side side, long timeout ) {
+			marketOrder(qty,side,timeout,orderTimeoutPolicy);
+		}
 
-	@Override
-	public void longTradeMarket(BigDecimal qty, long timeout) {
-		longTradeMarket(qty, timeout, orderTimeoutPolicy);
-	}
+		public void marketOrder( BigDecimal qty, Side side ) {
+			marketOrder(qty,side,orderTimeout,orderTimeoutPolicy);
+		}
+		
+		public void longTradeMarket(BigDecimal qty, long timeout, OrderTimeoutPolicy policy) {
+			marketOrder(qty,Side.BUY,timeout,policy);
+		}
 
-	@Override
-	public void longTradeMarket(BigDecimal qty) {
-		longTradeMarket(qty, orderTimeout, orderTimeoutPolicy);
-	}
+		public void longTradeMarket(BigDecimal qty, long timeout) {
+			longTradeMarket(qty, timeout, orderTimeoutPolicy);
+		}
+	
+		public void longTradeMarket(BigDecimal qty) {
+			longTradeMarket(qty, orderTimeout, orderTimeoutPolicy);
+		}
+	
+		public void shortTradeMarket(BigDecimal qty, long timeout, OrderTimeoutPolicy policy) {
+			marketOrder(qty,Side.SELL,timeout,policy);
+		}
+			
+		public void shortTradeMarket(BigDecimal qty, long timeout) {
+			shortTradeMarket(qty, timeout, orderTimeoutPolicy);
+		}
+	
+		public void shortTradeMarket(BigDecimal qty) {
+			shortTradeMarket(qty, orderTimeout, orderTimeoutPolicy);
+		}
+		
+		public void closeTradeMarket(long timeout, OrderTimeoutPolicy policy) {
+			reduceTradeMarket(quantity,timeout,policy);
+		}
+		
+		public void closeTradeMarket(long timeout) {
+			closeTradeMarket(timeout,orderTimeoutPolicy);
+		}
+		
+		public void closeTradeMarket() {
+			closeTradeMarket(orderTimeout,orderTimeoutPolicy);
+		}
+		
+		public void reduceTradeMarket(BigDecimal qty, long timeout, OrderTimeoutPolicy policy) {
+			marketOrder(qty,side.opposite(),timeout,policy);
+		}
 
-	@Override
-	public void shortTradeMarket(BigDecimal qty, long timeout, OrderTimeoutPolicy policy) {
-		marketOrder(qty,Side.SELL,timeout,policy);
-	}
-	
-	@Override
-	public void shortTradeMarket(BigDecimal qty, long timeout) {
-		shortTradeMarket(qty, timeout, orderTimeoutPolicy);
-	}
-
-	@Override
-	public void shortTradeMarket(BigDecimal qty) {
-		shortTradeMarket(qty, orderTimeout, orderTimeoutPolicy);
-	}
-	
-	@Override
-	public void closeTradeMarket(long timeout, OrderTimeoutPolicy policy) {
-		reduceTradeMarket(quantity,timeout,policy);
-	}
-	
-	@Override
-	public void closeTradeMarket(long timeout) {
-		closeTradeMarket(timeout,orderTimeoutPolicy);
-	}
-	
-	@Override
-	public void closeTradeMarket() {
-		closeTradeMarket(orderTimeout,orderTimeoutPolicy);
-	}
-
-	@Override
-	public void reduceTradeMarket(BigDecimal qty, long timeout, OrderTimeoutPolicy policy) {
-		marketOrder(qty,side.opposite(),timeout,policy);
-	}
-
-	@Override
-	public void reduceTradeMarket(BigDecimal qty, long timeout) {
-		reduceTradeMarket(qty,timeout,orderTimeoutPolicy);
-	}
-	
-	@Override
-	public void reduceTradeMarket(BigDecimal qty) {
-		reduceTradeMarket(qty,orderTimeout,orderTimeoutPolicy);
+		public void reduceTradeMarket(BigDecimal qty, long timeout) {
+			reduceTradeMarket(qty,timeout,orderTimeoutPolicy);
+		}
+		
+		public void reduceTradeMarket(BigDecimal qty) {
+			reduceTradeMarket(qty,orderTimeout,orderTimeoutPolicy);
+		}
 	}
 }

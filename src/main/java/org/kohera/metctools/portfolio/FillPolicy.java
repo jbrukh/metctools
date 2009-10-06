@@ -5,6 +5,6 @@ import org.marketcetera.trade.OrderID;
 
 public interface FillPolicy {
 	
-	public void onFill( DelegatorStrategy sender, OrderID orderId, ITrade trade );
+	public void onFill( DelegatorStrategy sender, OrderID orderId, Trade trade );
 
 }

@@ -14,14 +14,14 @@ public interface Portfolio {
 	 * events from the PortfolioStrategy, and will automatically update its state.
 	 * @param trade
 	 */
-	public void addTrade( ITrade trade );
+	public void addTrade( Trade trade );
 	
 	/**
 	 * Remove a trade from this portfolio by the Trade object.
 	 * 
 	 * @param trade
 	 */
-	public void removeTrade( ITrade trade );
+	public void removeTrade( Trade trade );
 	
 	/**
 	 * Remove a trade from this portfolio by symbol.
@@ -45,14 +45,14 @@ public interface Portfolio {
 	 * @param symbol
 	 * @return
 	 */
-	public ITrade getTrade( MSymbol symbol );
+	public Trade getTrade( MSymbol symbol );
 	
 	/**
 	 * Returns a Collection of all the trades in this Portfolio.
 	 * 
 	 * @return
 	 */
-	public Collection<ITrade> getTrades();
+	public Collection<Trade> getTrades();
 	
 	public String[] getSymbols();
 	
@@ -61,7 +61,7 @@ public interface Portfolio {
 	 * 
 	 * @param action
 	 */
-	public void forEach( Action<ITrade> action );
+	public void forEach( Action<Trade> action );
 	
 	/**
 	 * Set the order timeout policy for the entire portfolio.
