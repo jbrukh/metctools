@@ -1,6 +1,6 @@
 package org.kohera.metctools.delegate;
 
-import org.kohera.metctools.AdvancedStrategy;
+import org.kohera.metctools.DelegatorStrategy;
 import org.marketcetera.event.BidEvent;
 
 /**
@@ -10,6 +10,6 @@ import org.marketcetera.event.BidEvent;
  */
 public interface BidDelegate {
 	
-	public void onBid( AdvancedStrategy sender, BidEvent bidEvent );
+	public void onBid( DelegatorStrategy sender, BidEvent bidEvent );
 	
 }

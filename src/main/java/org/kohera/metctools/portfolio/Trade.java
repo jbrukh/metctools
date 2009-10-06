@@ -6,7 +6,7 @@ import org.kohera.metctools.util.OrderBuilder;
 import org.kohera.metctools.util.Timer;
 import org.kohera.metctools.util.Timer.Task;
 import org.kohera.metctools.util.Timer.TaskThread;
-import org.kohera.metctools.AdvancedStrategy;
+import org.kohera.metctools.DelegatorStrategy;
 import org.marketcetera.event.TradeEvent;
 import org.marketcetera.trade.BrokerID;
 import org.marketcetera.trade.ExecutionReport;
@@ -18,7 +18,7 @@ import org.marketcetera.trade.OrderStatus;
 public class Trade implements ITrade {
 
 	/* internal fields  */
-	transient private AdvancedStrategy parentStrategy;
+	transient private DelegatorStrategy parentStrategy;
 
 	/* fields for accounting */
 	private final MSymbol symbol;
@@ -34,12 +34,15 @@ public class Trade implements ITrade {
 	/* fields for trading */
 	private final OrderBuilder orderBuilder;
 	private final Timer timer;
-	private long orderTimeout;
 	private TaskThread orderTimeoutThr;
+
+	/* policies */
+	private long orderTimeout;
+	public FillPolicy fillPolicy;
 	public OrderTimeoutPolicy orderTimeoutPolicy;
 	
 	
-	public Trade( AdvancedStrategy parent, MSymbol symbol, BrokerID brokerId, String account ) {
+	public Trade( DelegatorStrategy parent, MSymbol symbol, BrokerID brokerId, String account ) {
 		this.symbol = symbol;
 		parentStrategy = parent;
 		quantity = leavesQuantity = pendingQuantity = BigDecimal.ZERO;
@@ -50,6 +53,7 @@ public class Trade implements ITrade {
 		orderBuilder = new OrderBuilder(brokerId,account);
 		timer = new Timer();
 		
+		fillPolicy = FillPolicies.ON_FILL_WARN;
 		orderTimeoutPolicy = OrderTimeoutPolicies.ON_TIMEOUT_WARN;
 		orderTimeout = 60*1000;
 	}
@@ -138,7 +142,7 @@ public class Trade implements ITrade {
 	}
 	
 	@Override
-	public AdvancedStrategy getParentStrategy() {
+	public DelegatorStrategy getParentStrategy() {
 		return parentStrategy;
 	}
 	
@@ -157,7 +161,7 @@ public class Trade implements ITrade {
 	 * @param report
 	 */
 	@Override
-	public final void acceptExecutionReport(AdvancedStrategy sender,
+	public final void acceptExecutionReport(DelegatorStrategy sender,
 			ExecutionReport report) {
 		/* check the correct symbol */
 		if ( symbol!=report.getSymbol()) {
@@ -211,6 +215,11 @@ public class Trade implements ITrade {
 			if ( orderTimeoutThr!=null ) {
 				timer.kill(orderTimeoutThr);
 			}
+			
+			/* execute the fill policy, if any */
+			if ( fillPolicy != null ) {
+				fillPolicy.onFill(parentStrategy, report.getOrderID(), this);
+			}
 		}
 		
 	}
@@ -230,6 +239,10 @@ public class Trade implements ITrade {
 	 * TRADING FUNCTIONALITY
 	 */
 
+	public void setFillPolicy( FillPolicy policy ) {
+		fillPolicy = policy;
+	}
+	
 	@Override
 	public void setOrderTimeoutPolicy( OrderTimeoutPolicy policy ) {
 		orderTimeoutPolicy = policy;
@@ -251,7 +264,10 @@ public class Trade implements ITrade {
 		/* create timeout */
 		orderTimeoutThr = timer.fireIn(timeout, new Task() {
 			public void performTask() {
-				orderTimeoutPolicy.onOrderTimeout(parentStrategy, id, timeout);
+				if ( orderTimeoutPolicy!=null ) {
+					orderTimeoutPolicy
+					  .onOrderTimeout(parentStrategy, id, timeout, Trade.this);
+				}
 			}			
 		});
 	}

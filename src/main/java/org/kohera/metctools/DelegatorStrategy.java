@@ -42,7 +42,7 @@ import org.marketcetera.event.TradeEvent;
 
 import quickfix.Message;
 
-public class AdvancedStrategy extends Strategy
+public class DelegatorStrategy extends Strategy
 	implements RunningStrategy {
 
 	/**
@@ -66,52 +66,52 @@ public class AdvancedStrategy extends Strategy
 	public class Relay {
 	
 		public void setProperty(String key, String value) {
-			AdvancedStrategy.setProperty(key,value);
+			DelegatorStrategy.setProperty(key,value);
 		}
 		
 		public void requestCallbackAfter(long delay, Object data) {
-			AdvancedStrategy.this.requestCallbackAfter(delay, data);
+			DelegatorStrategy.this.requestCallbackAfter(delay, data);
 		}
 		
 		public void requestCallbackAt(Date date, Object data) {
-			AdvancedStrategy.this.requestCallbackAt(date, data);
+			DelegatorStrategy.this.requestCallbackAt(date, data);
 		}
 		
 		public int requestMarketData( MarketDataRequest request) {
-			return AdvancedStrategy.this.requestMarketData(request);
+			return DelegatorStrategy.this.requestMarketData(request);
 		}
 		
 		public void cancelDataRequest( int id ) {
-			AdvancedStrategy.this.cancelDataRequest(id);
+			DelegatorStrategy.this.cancelDataRequest(id);
 		}
 		
 		public void cancelAllDataRequests() {
-			AdvancedStrategy.this.cancelAllDataRequests();
+			DelegatorStrategy.this.cancelAllDataRequests();
 		}
 		
 		public int requestCEPData(String[] statements, String source) {
-			return AdvancedStrategy.this.requestCEPData(statements, source);
+			return DelegatorStrategy.this.requestCEPData(statements, source);
 		}
 		
 		public int requestProcessedMarketData( String request, String[] statements, String cepSource) {
-			return AdvancedStrategy.this.requestProcessedMarketData(request, statements, cepSource);
+			return DelegatorStrategy.this.requestProcessedMarketData(request, statements, cepSource);
 		}
 		
 		public void suggestTrade(OrderSingle order, BigDecimal score, String id) {
-			AdvancedStrategy.this.suggestTrade(order, score, id);
+			DelegatorStrategy.this.suggestTrade(order, score, id);
 		}
 		
 		/** BEGIN -- FOR METC VERSION 1.5 **/
 		public OrderID sendOrder(OrderSingle order) {
-			return AdvancedStrategy.this.sendOrder(order);
+			return DelegatorStrategy.this.sendOrder(order);
 		}
 		
 		public boolean cancelOrder( OrderID orderId ) {
-			return AdvancedStrategy.this.cancelOrder(orderId);
+			return DelegatorStrategy.this.cancelOrder(orderId);
 		}
 		
 		public OrderID cancelReplace( OrderID orderId, OrderSingle order) {
-			return AdvancedStrategy.this.cancelReplace(orderId, order);
+			return DelegatorStrategy.this.cancelReplace(orderId, order);
 		}
 		/** END -- FOR METC VERSION 1.5 **/
 		
@@ -131,47 +131,47 @@ public class AdvancedStrategy extends Strategy
 		/** END -- FOR METC VERSION 1.6 **/
 		
 		public int cancelAllOrders() {
-			return AdvancedStrategy.this.cancelAllOrders();
+			return DelegatorStrategy.this.cancelAllOrders();
 		}
 		
 		public void sendMessage(Message message, BrokerID brokerId) {
-			AdvancedStrategy.this.sendMessage(message,brokerId);
+			DelegatorStrategy.this.sendMessage(message,brokerId);
 		}
 		
 		public void sendEventToCEP(EventBase event, String source) {
-			AdvancedStrategy.this.sendEventToCEP(event, source);
+			DelegatorStrategy.this.sendEventToCEP(event, source);
 		}
 		
 		public void sendEvent( EventBase event ) {
-			AdvancedStrategy.this.sendEvent(event);
+			DelegatorStrategy.this.sendEvent(event);
 		}
 		
 		public void notifyLow( String subject, String body ) {
-			AdvancedStrategy.this.notifyLow(subject, body);
+			DelegatorStrategy.this.notifyLow(subject, body);
 		}
 
 		public void notifyHigh( String subject, String body ) {
-			AdvancedStrategy.this.notifyHigh(subject, body);
+			DelegatorStrategy.this.notifyHigh(subject, body);
 		}
 		
 		public void notifyMedium( String subject, String body ) {
-			AdvancedStrategy.this.notifyMedium(subject, body);
+			DelegatorStrategy.this.notifyMedium(subject, body);
 		}
 		
 		public void debug( String message ) {
-			AdvancedStrategy.this.debug(message);
+			DelegatorStrategy.this.debug(message);
 		}
 
 		public void info( String message ) {
-			AdvancedStrategy.this.info(message);
+			DelegatorStrategy.this.info(message);
 		}
 
 		public void warn( String message ) {
-			AdvancedStrategy.this.warn(message);
+			DelegatorStrategy.this.warn(message);
 		}
 
 		public void error( String message ) {
-			AdvancedStrategy.this.error(message);
+			DelegatorStrategy.this.error(message);
 		}
 	}
 	
@@ -181,7 +181,7 @@ public class AdvancedStrategy extends Strategy
 	 * Constructor.
 	 * @throws ClientInitException 
 	 */
-	public AdvancedStrategy() throws ClientInitException {
+	public DelegatorStrategy() throws ClientInitException {
 		/* call the superclass constructor */
 		super();
 

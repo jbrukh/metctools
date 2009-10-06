@@ -112,6 +112,15 @@ public interface Portfolio {
 	 * @return
 	 */
 	public BigDecimal getTotalPosition();
+
+	/**
+	 * Set the fill policy for the entire portfolio.
+	 * 
+	 * @param policy
+	 */
+	public void setFillPolicy(FillPolicy policy);
+
+	public void clearFillPolicy();
 	
 
 	

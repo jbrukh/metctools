@@ -1,6 +1,6 @@
 package org.kohera.metctools.delegate;
 
-import org.kohera.metctools.AdvancedStrategy;
+import org.kohera.metctools.DelegatorStrategy;
 import org.marketcetera.event.AskEvent;
 
 /**
@@ -10,7 +10,7 @@ import org.marketcetera.event.AskEvent;
  */
 public interface AskDelegate {
 	
-	public void onAsk( AdvancedStrategy sender, AskEvent askEvent );
+	public void onAsk( DelegatorStrategy sender, AskEvent askEvent );
 
 
 }

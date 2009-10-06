@@ -10,6 +10,8 @@ import org.marketcetera.trade.MSymbol;
 public class PortfolioImpl implements Portfolio {
 
 	private Map<MSymbol,ITrade> trades;
+	
+	private FillPolicy fillPolicy;
 	private OrderTimeoutPolicy orderTimeoutPolicy;
 	private Long orderTimeout;
 	
@@ -25,6 +27,10 @@ public class PortfolioImpl implements Portfolio {
 		
 		if ( orderTimeout != null ) {
 			trade.setOrderTimeout( orderTimeout.longValue());
+		}
+		
+		if ( fillPolicy != null ) {
+			trade.setFillPolicy(fillPolicy);
 		}
 		
 		trades.put(trade.getSymbol(),trade);
@@ -60,6 +66,22 @@ public class PortfolioImpl implements Portfolio {
 	@Override
 	public void removeTrade(MSymbol symbol) {
 		trades.remove(symbol);
+	}
+	
+	@Override
+	public void setFillPolicy(final FillPolicy policy) {
+		fillPolicy = policy;
+		forEach( new Action<ITrade>() {
+			@Override
+			public void performAction(ITrade trade) {
+				trade.setFillPolicy(policy);
+			}
+		});
+	}
+	
+	@Override
+	public void clearFillPolicy() {
+		fillPolicy = null;
 	}
 
 	@Override

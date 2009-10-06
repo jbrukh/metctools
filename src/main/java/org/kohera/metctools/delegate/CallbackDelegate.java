@@ -1,6 +1,6 @@
 package org.kohera.metctools.delegate;
 
-import org.kohera.metctools.AdvancedStrategy;
+import org.kohera.metctools.DelegatorStrategy;
 
 /**
  * Delegate interface for Callback events. (For completeness.)
@@ -9,6 +9,6 @@ import org.kohera.metctools.AdvancedStrategy;
  */
 public interface CallbackDelegate extends EventDelegate {
 
-	public void onCallback( AdvancedStrategy sender, Object message );
+	public void onCallback( DelegatorStrategy sender, Object message );
 	
 }

@@ -10,7 +10,7 @@ import org.marketcetera.marketdata.MarketDataRequest;
 import org.marketcetera.trade.ExecutionReport;
 import org.marketcetera.trade.MSymbol;
 
-public abstract class PortfolioStrategy extends AdvancedStrategy {
+public abstract class PortfolioStrategy extends DelegatorStrategy {
 
 	/**
 	 * Internal class that routes execution reports to the appropriate
@@ -21,7 +21,7 @@ public abstract class PortfolioStrategy extends AdvancedStrategy {
 	 */
 	class TradeRouter implements ExecutionReportDelegate, TradeDelegate {
 		@Override
-		public void onExecutionReport(AdvancedStrategy sender,
+		public void onExecutionReport(DelegatorStrategy sender,
 				ExecutionReport report) {
 			MSymbol symbol = report.getSymbol();
 			if ( portfolio.hasTrade(symbol) ) {
@@ -34,7 +34,7 @@ public abstract class PortfolioStrategy extends AdvancedStrategy {
 		}
 
 		@Override
-		public void onTrade(AdvancedStrategy sender, TradeEvent tradeEvent) {
+		public void onTrade(DelegatorStrategy sender, TradeEvent tradeEvent) {
 			MSymbol symbol = tradeEvent.getSymbol();
 			if ( portfolio.hasTrade(symbol) ) {
 				portfolio.getTrade(symbol)
@@ -49,7 +49,7 @@ public abstract class PortfolioStrategy extends AdvancedStrategy {
 	
 	/* fields */
 	private Portfolio portfolio;
-	private int dataRequestId;
+	private Integer dataRequestId;
 	private String dataProvider;
 		
 	/**
@@ -62,20 +62,13 @@ public abstract class PortfolioStrategy extends AdvancedStrategy {
 		super();
 		
 		portfolio = new PortfolioImpl();
-		this.dataProvider = returnDataProvider();
+		dataRequestId = null;
 		
 		/* route execution reports and trades to the portfolio */
 		addDelegate( new TradeRouter() );
+		
 	}
 
-	/**
-	 * Must override this method to return the data provider for
-	 * the strategy.
-	 * 
-	 * @return
-	 */
-	public abstract String returnDataProvider();
-	
 	/**
 	 * Get the data provider.
 	 * 
@@ -83,6 +76,15 @@ public abstract class PortfolioStrategy extends AdvancedStrategy {
 	 */
 	public String getDataProvider() {
 		return dataProvider;
+	}
+	
+	/**
+	 * Set the data provider.
+	 * 
+	 * @param dataProvider
+	 */
+	public void setDataProvider(String dataProvider) {
+		this.dataProvider = dataProvider;
 	}
 	
 	/**
@@ -94,10 +96,12 @@ public abstract class PortfolioStrategy extends AdvancedStrategy {
 		return portfolio;
 	}
 	
-	public void startMarketData() {
+	public void startMarketData() {		
+		if ( !dataProviderIsSet() ) {
+			throw new RuntimeException(Messages.DATA_PROVIDER_NOT_SET);
+		}
 		
 		String[] symbols = portfolio.getSymbols();
-		
 		if ( symbols.length < 1 ) {
 			return;
 		}
@@ -113,7 +117,12 @@ public abstract class PortfolioStrategy extends AdvancedStrategy {
 	}
 
 	public void stopMarketData() {
-		cancelDataRequest(dataRequestId);
+		if (dataRequestId!=null && dataRequestId>0) {
+			cancelDataRequest(dataRequestId);
+		} dataRequestId = null;
 	}
 
+	private boolean dataProviderIsSet() {
+		return dataProvider!=null;
+	}
 }

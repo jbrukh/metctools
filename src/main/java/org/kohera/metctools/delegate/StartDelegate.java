@@ -1,9 +1,9 @@
 package org.kohera.metctools.delegate;
 
-import org.kohera.metctools.AdvancedStrategy;
+import org.kohera.metctools.DelegatorStrategy;
 
 public interface StartDelegate extends EventDelegate {
 
-	public void onStart( AdvancedStrategy sender);
+	public void onStart( DelegatorStrategy sender);
 	
 }

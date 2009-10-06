@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.kohera.metctools.util.Table;
-import org.kohera.metctools.AdvancedStrategy;
+import org.kohera.metctools.DelegatorStrategy;
 
 /**
  * The delegator handles delegation of events to the appropriate objects.
@@ -42,7 +42,7 @@ public final class Delegator {
 	
 	/* members */
 	private Table<Class<?>,EventDelegate> delegates;
-	private AdvancedStrategy parent;
+	private DelegatorStrategy parent;
 	
 	/**
 	 * Create a new Delegator which can relay requests back to a 
@@ -50,7 +50,7 @@ public final class Delegator {
 	 * 
 	 * @param sender
 	 */
-	public Delegator(AdvancedStrategy sender) {
+	public Delegator(DelegatorStrategy sender) {
 		delegates = new Table<Class<?>,EventDelegate>();
 		this.parent = sender;
 	}

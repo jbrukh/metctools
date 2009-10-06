@@ -1,6 +1,6 @@
 package org.kohera.metctools.delegate;
 
-import org.kohera.metctools.AdvancedStrategy;
+import org.kohera.metctools.DelegatorStrategy;
 import org.marketcetera.event.TradeEvent;
 
 /**
@@ -11,6 +11,6 @@ import org.marketcetera.event.TradeEvent;
  */
 public interface TradeDelegate extends EventDelegate {
 	
-	public void onTrade( AdvancedStrategy sender, TradeEvent tradeEvent );
+	public void onTrade( DelegatorStrategy sender, TradeEvent tradeEvent );
 	
 }

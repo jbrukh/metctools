@@ -1,6 +1,6 @@
 package org.kohera.metctools.delegate;
 
-import org.kohera.metctools.AdvancedStrategy;
+import org.kohera.metctools.DelegatorStrategy;
 import org.marketcetera.client.brokers.BrokerStatus;
 
 /**
@@ -11,6 +11,6 @@ import org.marketcetera.client.brokers.BrokerStatus;
  */
 public interface BrokerStatusDelegate extends EventDelegate {
 
-	public void onBrokerStatus( AdvancedStrategy sender, BrokerStatus status );
+	public void onBrokerStatus( DelegatorStrategy sender, BrokerStatus status );
 	
 }

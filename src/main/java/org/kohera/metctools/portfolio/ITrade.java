@@ -2,7 +2,7 @@ package org.kohera.metctools.portfolio;
 
 import java.math.BigDecimal;
 
-import org.kohera.metctools.AdvancedStrategy;
+import org.kohera.metctools.DelegatorStrategy;
 import org.marketcetera.event.TradeEvent;
 import org.marketcetera.trade.ExecutionReport;
 import org.marketcetera.trade.MSymbol;
@@ -118,10 +118,12 @@ public interface ITrade {
 	 * @param sender
 	 * @param report
 	 */
-	public void acceptExecutionReport(AdvancedStrategy sender, ExecutionReport report);
+	public void acceptExecutionReport(DelegatorStrategy sender, ExecutionReport report);
 
-	public AdvancedStrategy getParentStrategy();
+	public DelegatorStrategy getParentStrategy();
 
+	public void setFillPolicy(FillPolicy policy);
+	
 	public void setOrderTimeoutPolicy(OrderTimeoutPolicy policy);
 
 	public void setOrderTimeout(long timeout);
