@@ -239,7 +239,7 @@ public class Trade {
 				getSymbol(),
 				getLastPrice().floatValue(),
 				(side==Side.BUY?"+":(side==Side.SELL?"-":"")),
-				quantity,
+				quantity.intValue(),
 				costBasis.floatValue());
 	}
 
