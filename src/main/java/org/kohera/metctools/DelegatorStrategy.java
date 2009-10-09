@@ -65,6 +65,26 @@ public class DelegatorStrategy extends Strategy
 	 */
 	public class Relay {
 	
+		public String getParameter(String key) {
+			return DelegatorStrategy.this.getParameter(key);
+		}
+		
+		public String getProperty(String key) {
+			return DelegatorStrategy.getProperty(key);
+		}
+		
+		public ExecutionReport[] getExecutionReports(OrderID orderId) {
+			return DelegatorStrategy.this.getExecutionReports(orderId);
+		}
+		
+		public BrokerStatus[] getBrokers() {
+			return DelegatorStrategy.this.getBrokers();
+		}
+		
+		public BigDecimal getPositionAsOf(Date date, String symbol) {
+			return DelegatorStrategy.this.getPositionAsOf(date, symbol);
+		}
+		
 		public void setProperty(String key, String value) {
 			DelegatorStrategy.setProperty(key,value);
 		}
