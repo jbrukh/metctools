@@ -17,7 +17,7 @@ import org.kohera.metctools.DelegatorStrategy;
  * objects to the appropriate destinations.
  * 
  * 
- * @author Administrator
+ * @author Jake Brukhman
  *
  */
 
@@ -105,6 +105,7 @@ public final class Delegator {
 	/**
 	 * Utility method to extract only the correct implemented interfaces
 	 * from a given EventDelegate object.
+	 * 
 	 * @param delegate
 	 * @return
 	 */
@@ -115,5 +116,4 @@ public final class Delegator {
 		return interfaces;
 	}
 	
-
 }

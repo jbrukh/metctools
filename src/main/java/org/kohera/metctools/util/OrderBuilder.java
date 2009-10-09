@@ -11,23 +11,36 @@ import org.marketcetera.trade.Side;
 import org.marketcetera.trade.TimeInForce;
 
 /**
- * TODO: Make method listing more complete.
+ * Utility class to help build orders.
  * 
- * @author Administrator
+ * TODO: Should have more functionality.
+ * 
+ * @author Jake Brukhman
  *
  */
 public class OrderBuilder {
 	
+	/* fields */
 	private OrderSingle order;
-	
 	private BrokerID defaultBrokerId;
 	private String defaultAccount;
 	private TimeInForce defaultTimeInForce;
 	
+	/**
+	 * Create a new instance of OrderBuilder.
+	 * 
+	 */
 	public OrderBuilder() {
 		newOrder();
 	}
 	
+	/**
+	 * Create a new instance of OrderBuilder with default parameters.
+	 * 
+	 * @param brokerId
+	 * @param account
+	 * @param tif
+	 */
 	public OrderBuilder(BrokerID brokerId, String account, TimeInForce tif ) {
 		this.defaultBrokerId = brokerId;
 		this.defaultAccount = account;
@@ -35,17 +48,27 @@ public class OrderBuilder {
 		newOrder();
 	}
 	
+	/**
+	 * Create a new instance of OrderBuilder with default parameters.
+	 * 
+	 * @param brokerId
+	 * @param account
+	 */	
 	public OrderBuilder(BrokerID brokerId, String account) {
 		this(brokerId,account,TimeInForce.Day);
 	}
-		
 	
+	/**
+	 * Create a new instance of OrderBuilder with default parameters.
+	 * 
+	 * @param brokerId
+	 */	
 	public OrderBuilder(BrokerID brokerId) {
 		this(brokerId,null,TimeInForce.Day);
 	}
 	
 	/**
-	 * Utility method for generating the base order with defaults.
+	 * Generate the base order with defaults.
 	 */
 	public OrderBuilder newOrder() {
 		order = Factory.getInstance().createOrderSingle();
@@ -58,8 +81,7 @@ public class OrderBuilder {
 		}
 		if ( defaultTimeInForce != null ) {
 			withTimeInForce(defaultTimeInForce);
-		}
-		
+		}	
 		return this;
 	}
 	
@@ -69,63 +91,138 @@ public class OrderBuilder {
 	 * @return
 	 */
 	public OrderSingle getOrder() {
-		OrderSingle done = order;
-		newOrder();
-		return done;
+		return order;
 	}
 	
-	
+	/**
+	 * Sets the Account value for the order.
+	 * 
+	 * @param account
+	 * @return
+	 */
 	public OrderBuilder withAccount( String account ) {
 		order.setAccount(account);
 		return this;
 	}
 
+	/**
+	 * Sets the brokerId value for the order.
+	 * 
+	 * @param brokerId
+	 * @return
+	 */
 	public OrderBuilder withBrokerID( BrokerID brokerId ) {
 		order.setBrokerID(brokerId);
 		return this;
 	}
 	
+	/**
+	 * Sets the orderType value for the order.
+	 * 
+	 * @param type
+	 * @return
+	 */
 	public OrderBuilder withOrderType( OrderType type ) {
 		order.setOrderType(type);
 		return this;
 	}
 	
+	/**
+	 * Sets the orderQuantity value for the order.
+	 * 
+	 * @param qty
+	 * @return
+	 */
 	public OrderBuilder withQuantity( BigDecimal qty ) {
 		order.setQuantity(qty);
 		return this;
 	}
 	
+	/**
+	 * Sets the orderQuantity value for the order.
+	 * 
+	 * @param qty
+	 * @return
+	 */	
 	public OrderBuilder withQuantity( int qty ) {
 		return this.withQuantity(BigDecimal.valueOf(qty, 0));
 	}
-	
+
+	/**
+	 * Sets the side value for the order.
+	 * 
+	 * @param qty
+	 * @return
+	 */
 	public OrderBuilder withSide( Side side ) {
 		order.setSide(side);
 		return this;
 	}
 	
+	/**
+	 * Sets the side value for the order (using metctools Side class).
+	 * 
+	 * @param side
+	 * @return
+	 */
 	public OrderBuilder withSide( org.kohera.metctools.portfolio.Side side ) {
 		return this.withSide( side.toMetcSide() );
 	}
 
+	/**
+	 * Sets symbol for the order.
+	 * 
+	 * @param symbol
+	 * @return
+	 */
 	public OrderBuilder withSymbol( MSymbol symbol ) {
 		order.setSymbol(symbol);
 		return this;
 	}
 	
+	/**
+	 * Sets symbol value for the order.
+	 * 
+	 * @param symbol
+	 * @return
+	 */
 	public OrderBuilder withSymbol( String symbol ) {
 		return this.withSymbol( new MSymbol(symbol) );
 	}
 	
+	/**
+	 * Sets timeInForce value for the order.
+	 * 
+	 * @param tif
+	 * @return
+	 */
 	public OrderBuilder withTimeInForce( TimeInForce tif ) {
 		order.setTimeInForce(tif);
 		return this;
 	}
 	
+	/**
+	 * Creates a market order.
+	 * 
+	 * @param brokerId
+	 * @param account
+	 * @param symbol
+	 * @param qty
+	 * @param side
+	 * @return
+	 */
 	public OrderBuilder makeMarket(BrokerID brokerId, String account, MSymbol symbol, BigDecimal qty, Side side ) {
 		return makeMarket(symbol,qty,side).withBrokerID(brokerId).withAccount(account);
 	}
 	
+	/**
+	 * Creates a market order.
+	 * 
+	 * @param symbol
+	 * @param qty
+	 * @param side
+	 * @return
+	 */
 	public OrderBuilder makeMarket(MSymbol symbol, BigDecimal qty, Side side) {
 		return this
 			.withSymbol(symbol)

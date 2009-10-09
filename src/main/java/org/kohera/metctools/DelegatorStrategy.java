@@ -2,10 +2,7 @@ package org.kohera.metctools;
 
 import java.math.BigDecimal;
 import java.util.Date;
-
 import java.util.Map;
-
-
 import org.kohera.metctools.delegate.AskDelegate;
 import org.kohera.metctools.delegate.BidDelegate;
 import org.kohera.metctools.delegate.BrokerStatusDelegate;
@@ -42,16 +39,30 @@ import org.marketcetera.event.TradeEvent;
 
 import quickfix.Message;
 
+/**
+ * Basic org.marketcetera.strategy.java.Strategy wrapper that implements:
+ * 
+ *   - BrokerStatus and ServerStatus event handling
+ *   - Delegation of events.
+ * 
+ * How to use:
+ * 
+ *  Subclass DelegatorStrategy and use addDelegate() to set your delegate
+ *  objects.
+ *   
+ * @author Jake Brukhman
+ * @since 1.0.0
+ *
+ */
 public class DelegatorStrategy extends Strategy
 	implements RunningStrategy {
 
-	/**
-	 * FIELDS
-	 */
-	private Client client;
-	private Delegator delegator;
-	private Relay relay;
-
+	/* fields */
+	private Client 		client;
+	private Delegator 	delegator;
+	private Relay 		relay;
+	
+	/* status listeners*/
 	private final BrokerStatusListener BROKER_STATUS_LISTENER;
 	private final ServerStatusListener SERVER_STATUS_LISTENER;
 	/**/
@@ -60,8 +71,8 @@ public class DelegatorStrategy extends Strategy
 	/**
 	 * Inner class that makes exposes action methods from the Strategy class
 	 * to outside delegates.
-	 * 
-	 * TODO: Implement a complete listing of actions.
+	 *
+	 * TODO: Implement full API.
 	 */
 	public class Relay {
 	
@@ -194,11 +205,10 @@ public class DelegatorStrategy extends Strategy
 			DelegatorStrategy.this.error(message);
 		}
 	}
-	
-
 
 	/**
 	 * Constructor.
+	 * 
 	 * @throws ClientInitException 
 	 */
 	public DelegatorStrategy() throws ClientInitException {
@@ -210,7 +220,7 @@ public class DelegatorStrategy extends Strategy
 		relay = new Relay();
 		
 		/* event listening init */
-			client = ClientManager.getInstance();
+		client = ClientManager.getInstance();
 		BROKER_STATUS_LISTENER = new BrokerStatusListener() {
 			@Override
 			public void receiveBrokerStatus(BrokerStatus status) {
@@ -277,7 +287,8 @@ public class DelegatorStrategy extends Strategy
 
 	
 	/**
-	 * Events
+	 * Events.  All incoming events are delegated to the appropriate
+	 * EventDelegates that have been set by addDelegate().
 	 */
 	
 	public final void onAsk( AskEvent event ) {

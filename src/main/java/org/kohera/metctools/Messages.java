@@ -1,5 +1,12 @@
 package org.kohera.metctools;
 
+/**
+ * 
+ * Error messages for Strategy wrappers.
+ * 
+ * @author Jake Brukhman
+ *
+ */
 public class Messages {
 
 	public static final String DATA_PROVIDER_NOT_SET =

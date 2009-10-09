@@ -139,7 +139,10 @@ public class PortfolioImpl implements Portfolio {
 		return symbols;
 	}
 
-	
+	@Override
+	public int size() {
+		return trades.size();
+	}
 
 
 

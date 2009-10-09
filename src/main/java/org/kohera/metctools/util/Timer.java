@@ -4,14 +4,31 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+/**
+ * Generic Timer class for scheduling future tasks.
+ * 
+ * @author Jake Brukhman
+ *
+ */
 public class Timer {
 	
+	/* fields */
 	public List<TaskThread> threads;
 	
+	/**
+	 * Interface for specifying generic Tasks.
+	 *
+	 */
 	public interface Task {
 		public void performTask();
 	}
 	
+	/**
+	 * Runs a Task on a separate thread after a delay.
+	 * 
+	 * @author Jake Brukhman
+	 *
+	 */
 	public class TaskThread extends Thread {
 		/* fields */
 		private long delay;
@@ -94,23 +111,4 @@ public class Timer {
 		}
 	}
 	
-	
-	public static void main( String[] args ) throws InterruptedException {
-		Timer t = new Timer();
-		
-		TaskThread thr = t.fireIn(60*1000, new Task() {
-
-			@Override
-			public void performTask() {
-				System.out.println("task");
-			}
-		 
-		});
-		
-		//Thread.sleep(3000);
-		t.kill(thr);
-		System.out.println(t.threads.size());
-		
-	}
-		
 }

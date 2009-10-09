@@ -114,14 +114,22 @@ public interface Portfolio {
 	public BigDecimal getTotalPosition();
 
 	/**
-	 * Set the fill policy for the entire portfolio.
+	 * Set the fill policy for the entire Portfolio.
 	 * 
 	 * @param policy
 	 */
 	public void setFillPolicy(FillPolicy policy);
 
+	/**
+	 * Clear the fill policy for the entire Portfolio.
+	 */
 	public void clearFillPolicy();
 	
-
+	/**
+	 * Get the number of Trades in the Portfolio.
+	 * 
+	 * @return
+	 */
+    public int size();
 	
 }

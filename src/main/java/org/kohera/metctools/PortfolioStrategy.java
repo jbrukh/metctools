@@ -10,6 +10,27 @@ import org.marketcetera.marketdata.MarketDataRequest;
 import org.marketcetera.trade.ExecutionReport;
 import org.marketcetera.trade.MSymbol;
 
+/**
+ * 
+ * A more complex wrapper that has Portfolio functionality.
+ * 
+ * Design:
+ * 
+ *   The user can use this class just like a DelegatorStrategy; he may
+ *   also create a number of Trade objects and place them in the Portfolio
+ *   by calling getPortfolio().addTrade().
+ *   
+ *   Once a trade is in the Portfolio, market data for that symbol will be
+ *   turned on if startMarketData() is called (market data provider must be
+ *   set using setMarketDataProvider() for this to work.)  ExecutionReports and
+ *   TradeEvents are routed automatically to the Trade object and its state
+ *   is automatically updated.  A Trade object will also obey order timeouts,
+ *   order timeout policies, and fill polices when they are set for the
+ *   entire portfolio.
+ * 
+ * @author Jake Brukhman
+ *
+ */
 public abstract class PortfolioStrategy extends DelegatorStrategy {
 
 	/**
@@ -66,7 +87,6 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		
 		/* route execution reports and trades to the portfolio */
 		addDelegate( new TradeRouter() );
-		
 	}
 
 	/**
@@ -106,7 +126,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 			return;
 		}
 		
-		getRelay().warn("Starting market data...");
+		warn("Starting market data...");
 		MarketDataRequest request = MarketDataRequest
 										.newRequest()
 										.withSymbols(symbols)
@@ -125,4 +145,5 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 	private boolean dataProviderIsSet() {
 		return dataProvider!=null;
 	}
+
 }
