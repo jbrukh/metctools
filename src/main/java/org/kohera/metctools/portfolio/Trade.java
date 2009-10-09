@@ -18,30 +18,40 @@ import org.marketcetera.trade.OrderStatus;
 public class Trade {
 
 	/* internal fields  */
-	transient private DelegatorStrategy parentStrategy;
-	private final OrderProcessor orderProcessor;
+	transient private 
+		DelegatorStrategy 	parentStrategy;		// parent strategy
+	private final 
+		OrderProcessor 		orderProcessor;		// order processing object
 
-	/* fields for accounting */
-	private final MSymbol symbol;
-	private BigDecimal quantity;
-	private BigDecimal leavesQuantity;
-	private BigDecimal pendingQuantity;
-	private Side side;
-	private Side pendingSide;
-	private OrderID pendingOrderId;
-	private BigDecimal costBasis;
-	private TradeEvent lastTrade;
+	/* accounting */
+	private final MSymbol 	symbol;				// underlying symbol
+	private BigDecimal 		quantity;			// unsigned position
+	private BigDecimal 		leavesQuantity;		// leavesQuantity of the pending order
+	private BigDecimal 		pendingQuantity;	// number of shares pending fill
+	private Side 			side;				// side of the position
+	private Side 			pendingSide;		// side of the incoming fills
+	private OrderID 		pendingOrderId;		// orderId of the order being filled
+	private BigDecimal 		costBasis;			// average entry price of position
+	private TradeEvent 		lastTrade;			// last trade of the underylying symbol
 
 	/* credentials */
-	private final BrokerID brokerId;
-	private final String account;
+	private final BrokerID 	brokerId;			// broker associated with this trade
+	private final String 	account;			// account associated with this trade
 
 	/* policies */
-	private long orderTimeout;
-	public FillPolicy fillPolicy;
-	public OrderTimeoutPolicy orderTimeoutPolicy;
+	private long 			orderTimeout;		// default timeout in milliseconds
+	public FillPolicy 		fillPolicy;			// default fill policy (what to do on a fill?)
+	public OrderTimeoutPolicy orderTimeoutPolicy; // default order timeout policy (what to do if order times out?)
 	
 	
+	/**
+	 * Create a new Trade object instance.
+	 * 
+	 * @param parent
+	 * @param symbol
+	 * @param brokerId
+	 * @param account
+	 */
 	public Trade( DelegatorStrategy parent, MSymbol symbol, BrokerID brokerId, String account ) {
 		this.symbol = symbol;
 		parentStrategy = parent;
@@ -61,104 +71,192 @@ public class Trade {
 		orderProcessor = new OrderProcessor();
 	}
 
-	/* GETTERS */
+	/**
+	 * Returns the brokerId.
+	 * 
+	 * @return
+	 */
 	public BrokerID getBrokerId() {
 		return brokerId;
 	}
 
+	/**
+	 * Returns the account.
+	 * 
+	 * @return
+	 */
 	public String getAccount() {
 		return account;
 	}
 	
+	/**
+	 * Returns the cost basis (average price of position).
+	 * 
+	 * @return
+	 */
 	public BigDecimal getCostBasis() {
 		return costBasis;
 	}
 
-	
+	/**
+	 * Returns the number of shares still pending fill.
+	 * 
+	 * @return
+	 */
 	public BigDecimal getLeavesQuantity() {
 		return leavesQuantity;
 	}
 
-	
+	/**
+	 * Returns the total number of shares comprise a pending order.
+	 * 
+	 * @return
+	 */
 	public BigDecimal getPendingQuantity() {
 		return pendingQuantity;
 	}
 
-	
+	/**
+	 * Returns the unsigned number of shares of this position.
+	 * 
+	 * This does not take into consideration a currently filling order,
+	 * even if some of the order has been filled.  (See getPendingQuantity()
+	 * and getLeavesQuantity().)
+	 * 
+	 * @return
+	 */
 	public BigDecimal getQuantity() {
 		return quantity;
 	}
 
-	
+	/**
+	 * Returns the underlying symbol of this Trade.
+	 * 
+	 * @return
+	 */
 	public MSymbol getSymbol() {
 		return symbol;
 	}
 
-	
+	/**
+	 * Returns true if the Trade is currently has a pending order
+	 * that is filling.
+	 * 
+	 * @return
+	 */
 	public boolean isFilling() {
 		return (pendingOrderId!=null && leavesQuantity.compareTo(BigDecimal.ZERO)!=0);
 	}
 
-	
+	/**
+	 * Returns true if the Trade currently has a pending order.
+	 * 
+	 * @return
+	 */
 	public boolean isPending() {
 		return (pendingOrderId!=null);
 	}
 	
-	
+	/**
+	 * Returns the orderId of the pending order (or null).
+	 * 
+	 * @return
+	 */
 	public OrderID getPendingOrderID() {
 		return pendingOrderId;
 	}
 
-	
+	/**
+	 * Returns the side of the trade (or Side.NONE).
+	 * 
+	 * @return
+	 */
 	public Side getSide() {
 		return side;
 	}
 
-	
+	/**
+	 * Returns the signed position of the Trade.
+	 * 
+	 * @return
+	 */
 	public BigDecimal getSignedQuantity() {
 		return quantity.multiply(side.toBigDecimal());
 	}
 
-	
+	/**
+	 * Returns the side of the pending order.
+	 * 
+	 * @return
+	 */
 	public Side getPendingSide() {
 		return pendingSide;
 	}
-	
-	
+
+	/**
+	 * Returns the last trading price of the underlying symbol.
+	 * 
+	 * In order for this method to return an accurate value,
+	 * data flows for this symbol must have been turned on,
+	 * and this Trade must reside in a PortfolioStrategy's
+	 * Portfolio.
+	 * 
+	 * @return
+	 */
 	public BigDecimal getLastPrice() {
 		if (lastTrade==null) return BigDecimal.ZERO;
 		return lastTrade.getPrice();
 	}
 
-	
+	/**
+	 * Returns the last TradeEvent.
+	 * 
+	 * In order for this method to return an accurate value,
+	 * data flows for this symbol must have been turned on,
+	 * and this Trade must reside in a PortfolioStrategy's
+	 * Portfolio.
+	 * 
+	 * @return
+	 */
 	public TradeEvent getLastTrade() {
 		return lastTrade;
 	}
 	
-	
-	public BigDecimal getProfitLoss() {
-		if (lastTrade==null) return BigDecimal.ZERO;
-		return
-		lastTrade.getPrice().subtract(costBasis).multiply(
-				side.toBigDecimal()).multiply(quantity);
-	}
-
-	
+	/**
+	 * Returns the number of shares that have been filled up to this
+	 * point.
+	 * 
+	 * @return
+	 */
 	public BigDecimal getFillingQuantity() {
 		BigDecimal polarity = BigDecimal.valueOf(side.value()*pendingSide.value(),0);
 		BigDecimal alreadyFilled = pendingQuantity.subtract(leavesQuantity);
 		return quantity.add( polarity.multiply(alreadyFilled) );
 	}
 	
-	
+	/**
+	 * Returns a reference to the parent strategy for this Trade.
+	 * 
+	 * @return
+	 */
 	public DelegatorStrategy getParentStrategy() {
 		return parentStrategy;
 	}
 	
+	/**
+	 * Interface for getting the latest TradeEvent.
+	 * 
+	 * @param tradeEvent
+	 */
 	public void acceptTrade(TradeEvent tradeEvent) {
 		lastTrade = tradeEvent;
 	}
-	
+
+	/**
+	 * Returns the OrderProcessor object for this Trade.
+	 * 
+	 * @return
+	 */
 	public OrderProcessor order() {
 		return orderProcessor;
 	}
@@ -234,6 +332,9 @@ public class Trade {
 		
 	}
 	
+	/**
+	 * Formats this Trade object for text output.
+	 */
 	public String toString() {
 		return String.format("{%s:[%.2f]:%s%d@%.4f}",
 				getSymbol(),
@@ -243,17 +344,35 @@ public class Trade {
 				costBasis.floatValue());
 	}
 
-	
+	/**
+	 * Sets the FillPolicy for this Trade.
+	 * 
+	 * When an order is successfully filled, the FillPolicy.onFill()
+	 * method is executed.
+	 * 
+	 * @param policy
+	 */
 	public void setFillPolicy( FillPolicy policy ) {
 		fillPolicy = policy;
 	}
 	
-	
+	/**
+	 * Sets the OrderTimeoutPolicy for this Trade.
+	 * 
+	 * When an order has not been completely filled by the time
+	 * an order timeout occurs, then this policy is executed.
+	 * 
+	 * @param policy
+	 */
 	public void setOrderTimeoutPolicy( OrderTimeoutPolicy policy ) {
 		orderTimeoutPolicy = policy;
 	}
 	
-	
+	/**
+	 * Sets the order timeout time (in ms.) for this Trade.
+	 * 
+	 * @param timeout
+	 */
 	public void setOrderTimeout( long timeout ) {
 		orderTimeout = timeout;
 	}
