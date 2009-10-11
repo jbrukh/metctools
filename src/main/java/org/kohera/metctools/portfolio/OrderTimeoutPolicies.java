@@ -30,7 +30,7 @@ public final class OrderTimeoutPolicies {
 	public final static OrderTimeoutPolicy ON_TIMEOUT_CANCEL = new OrderTimeoutPolicy() {
 		public void onOrderTimeout(DelegatorStrategy sender, OrderID orderId, long timeout, Trade trade) {
 			sender.getRelay().warn("Could not fill order in " + timeout + " ms. (Canceling)");
-			sender.getRelay().cancelOrder(orderId);
+			sender.getRelay().cancelOrder(orderId,true);
 		}		
 	};
 
