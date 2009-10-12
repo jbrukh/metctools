@@ -1,9 +1,9 @@
-package org.kohera.metctools;
+package org.kohera.metctools.portfolio;
 
+import org.kohera.metctools.DelegatorStrategy;
+import org.kohera.metctools.Messages;
 import org.kohera.metctools.delegate.ExecutionReportDelegate;
 import org.kohera.metctools.delegate.TradeDelegate;
-import org.kohera.metctools.portfolio.Portfolio;
-import org.kohera.metctools.portfolio.PortfolioImpl;
 import org.marketcetera.client.ClientInitException;
 import org.marketcetera.event.TradeEvent;
 import org.marketcetera.marketdata.MarketDataRequest;
@@ -82,7 +82,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 	public PortfolioStrategy() throws ClientInitException {
 		super();
 		
-		portfolio = new PortfolioImpl();
+		portfolio = new PortfolioImpl(this);
 		dataRequestId = null;
 		
 		/* route execution reports and trades to the portfolio */

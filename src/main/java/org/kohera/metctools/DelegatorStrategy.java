@@ -135,22 +135,6 @@ public class DelegatorStrategy extends Strategy
 			DelegatorStrategy.this.suggestTrade(order, score, id);
 		}
 		
-		/** BEGIN -- FOR METC VERSION 1.5 **/
-		/*public OrderID sendOrder(OrderSingle order) {
-			return DelegatorStrategy.this.sendOrder(order);
-		}
-		
-		public boolean cancelOrder( OrderID orderId ) {
-			return DelegatorStrategy.this.cancelOrder(orderId);
-		}
-		
-		public OrderID cancelReplace( OrderID orderId, OrderSingle order) {
-			return DelegatorStrategy.this.cancelReplace(orderId, order);
-		}*/
-		/** END -- FOR METC VERSION 1.5 **/
-		
-		
-		/** BEGIN -- FOR METC VERSION 1.6 **/
 		public boolean send(Object object) {
 			return DelegatorStrategy.this.send(object);
 		}
@@ -162,7 +146,6 @@ public class DelegatorStrategy extends Strategy
 		public OrderCancel cancelOrder( OrderID orderId, boolean sendOrder) {
 			return DelegatorStrategy.this.cancelOrder(orderId, sendOrder);
 		}
-		/** END -- FOR METC VERSION 1.6 **/
 		
 		public int cancelAllOrders() {
 			return DelegatorStrategy.this.cancelAllOrders();
@@ -244,10 +227,18 @@ public class DelegatorStrategy extends Strategy
 	 * Methods
 	 */
 	
+	/**
+	 * Add a delegate to this strategy.  The delegate must
+	 * implement one or more extensions of the EventDelegate interface.
+	 */
 	public void addDelegate( EventDelegate delegate ) {
 		delegator.addDelegate(delegate);
 	}
 	
+	/**
+	 * Remove a a delegate from this strategy.
+	 * @param delegate
+	 */
 	public void removeDelegate(EventDelegate delegate) {
 		delegator.removeDelegate(delegate);
 	}

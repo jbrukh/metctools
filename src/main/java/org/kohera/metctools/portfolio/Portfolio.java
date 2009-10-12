@@ -3,6 +3,7 @@ package org.kohera.metctools.portfolio;
 import java.math.BigDecimal;
 import java.util.Collection;
 
+import org.marketcetera.trade.BrokerID;
 import org.marketcetera.trade.MSymbol;
 
 public interface Portfolio {
@@ -54,6 +55,12 @@ public interface Portfolio {
 	 */
 	public Collection<Trade> getTrades();
 	
+	/**
+	 * Returns an array of symbols that represent the trades
+	 * in the Portfolio.
+	 * 
+	 * @return
+	 */
 	public String[] getSymbols();
 	
 	/**
@@ -131,5 +138,14 @@ public interface Portfolio {
 	 * @return
 	 */
     public int size();
+
+	public void setAccountCredentials(BrokerID brokerId, String account);
+
+	public BrokerID getBrokerID();
+
+	public String getAccount();
+
+	public PortfolioStrategy getParentStrategy();
 	
+	public Trade createTrade(String symbol);
 }

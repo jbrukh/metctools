@@ -5,18 +5,49 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.marketcetera.trade.BrokerID;
 import org.marketcetera.trade.MSymbol;
 
-public class PortfolioImpl implements Portfolio {
+final class PortfolioImpl implements Portfolio {
 
-	private Map<MSymbol,Trade> trades;
+	/* trades */
+	private Map<MSymbol,Trade>	trades;
+	private PortfolioStrategy	parentStrategy;
+	private BrokerID			brokerId;
+	private String				account;
 	
-	private FillPolicy fillPolicy;
-	private OrderTimeoutPolicy orderTimeoutPolicy;
-	private Long orderTimeout;
+	/* default policies */
+	private FillPolicy 			fillPolicy;
+	private OrderTimeoutPolicy 	orderTimeoutPolicy;
+	private Long 				orderTimeout;
 	
-	public PortfolioImpl() {
+	/**
+	 * Create a new PortfolioImpl instance.
+	 * 
+	 */
+	public PortfolioImpl(PortfolioStrategy parent) {
 		trades = new LinkedHashMap<MSymbol,Trade>();
+	}
+	
+	@Override
+	public void setAccountCredentials(BrokerID brokerId, String account) {
+		this.brokerId = brokerId;
+		this.account = account;
+	}
+	
+	@Override
+	public BrokerID getBrokerID() {
+		return brokerId;
+	}
+	
+	@Override
+	public String getAccount() {
+		return account;
+	}
+	
+	@Override
+	public PortfolioStrategy getParentStrategy() {
+		return parentStrategy;
 	}
 	
 	@Override
@@ -142,6 +173,17 @@ public class PortfolioImpl implements Portfolio {
 	@Override
 	public int size() {
 		return trades.size();
+	}
+
+	@Override
+	public Trade createTrade(String symbol) {
+		if (trades.containsKey(symbol) ) return trades.get(symbol);
+		
+		Trade trade =
+			new Trade(new MSymbol(symbol),this);
+		addTrade(trade);
+		return trade;
+		
 	}
 
 

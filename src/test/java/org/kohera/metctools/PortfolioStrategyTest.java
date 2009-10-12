@@ -2,6 +2,7 @@ package org.kohera.metctools;
 
 import org.kohera.metctools.delegate.StartDelegate;
 import org.kohera.metctools.delegate.TradeDelegate;
+import org.kohera.metctools.portfolio.PortfolioStrategy;
 import org.kohera.metctools.portfolio.Trade;
 import org.marketcetera.client.ClientInitException;
 import org.marketcetera.event.TradeEvent;

@@ -7,7 +7,6 @@ import org.kohera.metctools.util.Timer;
 import org.kohera.metctools.util.Timer.Task;
 import org.kohera.metctools.util.Timer.TaskThread;
 import org.kohera.metctools.DelegatorStrategy;
-import org.kohera.metctools.PortfolioStrategy;
 import org.marketcetera.event.TradeEvent;
 import org.marketcetera.trade.BrokerID;
 import org.marketcetera.trade.ExecutionReport;
@@ -16,11 +15,11 @@ import org.marketcetera.trade.OrderID;
 import org.marketcetera.trade.OrderSingle;
 import org.marketcetera.trade.OrderStatus;
 
-public class Trade {
+final class Trade {
 
 	/* internal fields  */
 	transient private 
-		PortfolioStrategy 	parentStrategy;		// parent strategy
+		Portfolio 			parentPortfolio;		// parent strategy
 	private  
 		OrderProcessor 		orderProcessor;		// order processing object
 
@@ -34,11 +33,7 @@ public class Trade {
 	private OrderID 		pendingOrderId;		// orderId of the order being filled
 	private BigDecimal 		costBasis;			// average entry price of position
 	private TradeEvent 		lastTrade;			// last trade of the underylying symbol
-
-	/* credentials */
-	private final BrokerID 	brokerId;			// broker associated with this trade
-	private final String 	account;			// account associated with this trade
-
+	
 	/* policies */
 	private long 			orderTimeout;		// default timeout in milliseconds
 	public FillPolicy 		fillPolicy;			// default fill policy (what to do on a fill?)
@@ -53,18 +48,12 @@ public class Trade {
 	 * @param brokerId
 	 * @param account
 	 */
-	public Trade( PortfolioStrategy parent, MSymbol symbol, BrokerID brokerId, String account ) {
+	public Trade( MSymbol symbol, Portfolio parent ) {
 		this.symbol = symbol;
-		this.parentStrategy = parent;
-		this.brokerId = brokerId;
-		this.account = account;
+		this.parentPortfolio = parent;
 		init();
 	}
 	
-	public Trade( MSymbol symbol, BrokerID brokerId, String account ) {
-		this(null, symbol, brokerId, account);
-	}
-
 	private void init() {
 		quantity = leavesQuantity = pendingQuantity = BigDecimal.ZERO;
 		costBasis = BigDecimal.ZERO;
@@ -77,23 +66,6 @@ public class Trade {
 		orderTimeout = 60*1000;
 		
 		orderProcessor = new OrderProcessor();	
-	}
-	/**
-	 * Returns the brokerId.
-	 * 
-	 * @return
-	 */
-	public BrokerID getBrokerId() {
-		return brokerId;
-	}
-
-	/**
-	 * Returns the account.
-	 * 
-	 * @return
-	 */
-	public String getAccount() {
-		return account;
 	}
 	
 	/**
@@ -242,14 +214,14 @@ public class Trade {
 	}
 	
 	/**
-	 * Returns a reference to the parent strategy for this Trade.
+	 * Returns a reference to the parent Portfolio for this Trade.
 	 * 
 	 * @return
 	 */
-	public PortfolioStrategy getParentStrategy() {
-		return parentStrategy;
+	public Portfolio getParentPortfolio() {
+		return parentPortfolio;
 	}
-	
+		
 	/**
 	 * Interface for getting the latest TradeEvent.
 	 * 
@@ -333,7 +305,8 @@ public class Trade {
 			
 			/* execute the fill policy, if any */
 			if ( fillPolicy != null ) {
-				fillPolicy.onFill(parentStrategy, report.getOrderID(), this);
+				fillPolicy.onFill(parentPortfolio.getParentStrategy(),
+						report.getOrderID(), this);
 			}
 		}
 		
@@ -384,11 +357,6 @@ public class Trade {
 		orderTimeout = timeout;
 	}
 	
-	public void setParentStrategy( PortfolioStrategy parent ) {
-		parentStrategy = parent;
-	}
-	
-	
 	
 	/**
 	 * 
@@ -403,12 +371,21 @@ public class Trade {
 
 		
 		public OrderProcessor() {
+			final BrokerID brokerId = getParentPortfolio().getBrokerID();
+			final String account = getParentPortfolio().getAccount();
 			orderBuilder = new OrderBuilder(brokerId,account);
 			timer = new Timer();
 		}
 		
 		private void sendOrder( OrderSingle order, final long timeout, final OrderTimeoutPolicy policy ) {
-			if (parentStrategy==null) {
+			if (parentPortfolio==null) {
+				throw new RuntimeException("Trade "+this+" doesn't have a parent portfolio.");
+			}
+			
+			/* get the parent strategy */
+			final PortfolioStrategy parentStrategy = 
+				parentPortfolio.getParentStrategy();
+			if ( parentStrategy==null) {
 				throw new RuntimeException("Trade "+this+" doesn't have a parent strategy.");
 			}
 			

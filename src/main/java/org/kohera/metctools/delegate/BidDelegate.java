@@ -5,11 +5,19 @@ import org.marketcetera.event.BidEvent;
 
 /**
  * Delegate interface for BidEvents.
- * @author Administrator
+ * 
+ * @author Jake Brukhman
  *
  */
 public interface BidDelegate {
 	
+	/**
+	 * 
+	 * Implement this method to handle BidEvents.
+	 * 
+	 * @param sender
+	 * @param bidEvent
+	 */
 	public void onBid( DelegatorStrategy sender, BidEvent bidEvent );
 	
 }

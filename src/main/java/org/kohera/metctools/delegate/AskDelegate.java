@@ -5,7 +5,8 @@ import org.marketcetera.event.AskEvent;
 
 /**
  * Delegate interface for AskEvents.
- * @author Administrator
+ * 
+ * @author Jake Brukhman
  *
  */
 public interface AskDelegate {

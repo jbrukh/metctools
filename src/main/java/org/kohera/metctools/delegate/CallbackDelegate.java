@@ -4,7 +4,8 @@ import org.kohera.metctools.DelegatorStrategy;
 
 /**
  * Delegate interface for Callback events. (For completeness.)
- * @author Administrator
+ * 
+ * @author Jake Brukhman
  *
  */
 public interface CallbackDelegate extends EventDelegate {
