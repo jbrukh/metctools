@@ -7,6 +7,7 @@ import org.kohera.metctools.util.Timer;
 import org.kohera.metctools.util.Timer.Task;
 import org.kohera.metctools.util.Timer.TaskThread;
 import org.kohera.metctools.DelegatorStrategy;
+import org.kohera.metctools.PortfolioStrategy;
 import org.marketcetera.event.TradeEvent;
 import org.marketcetera.trade.BrokerID;
 import org.marketcetera.trade.ExecutionReport;
@@ -19,8 +20,8 @@ public class Trade {
 
 	/* internal fields  */
 	transient private 
-		DelegatorStrategy 	parentStrategy;		// parent strategy
-	private final 
+		PortfolioStrategy 	parentStrategy;		// parent strategy
+	private  
 		OrderProcessor 		orderProcessor;		// order processing object
 
 	/* accounting */
@@ -52,25 +53,31 @@ public class Trade {
 	 * @param brokerId
 	 * @param account
 	 */
-	public Trade( DelegatorStrategy parent, MSymbol symbol, BrokerID brokerId, String account ) {
+	public Trade( PortfolioStrategy parent, MSymbol symbol, BrokerID brokerId, String account ) {
 		this.symbol = symbol;
-		parentStrategy = parent;
+		this.parentStrategy = parent;
+		this.brokerId = brokerId;
+		this.account = account;
+		init();
+	}
+	
+	public Trade( MSymbol symbol, BrokerID brokerId, String account ) {
+		this(null, symbol, brokerId, account);
+	}
+
+	private void init() {
 		quantity = leavesQuantity = pendingQuantity = BigDecimal.ZERO;
 		costBasis = BigDecimal.ZERO;
 		pendingOrderId = null;
 		lastTrade = null;
 		side = pendingSide = Side.NONE;
 		
-		this.brokerId = brokerId;
-		this.account = account;
-		
 		fillPolicy = FillPolicies.ON_FILL_WARN;
 		orderTimeoutPolicy = OrderTimeoutPolicies.ON_TIMEOUT_WARN;
 		orderTimeout = 60*1000;
 		
-		orderProcessor = new OrderProcessor();
+		orderProcessor = new OrderProcessor();	
 	}
-
 	/**
 	 * Returns the brokerId.
 	 * 
@@ -239,7 +246,7 @@ public class Trade {
 	 * 
 	 * @return
 	 */
-	public DelegatorStrategy getParentStrategy() {
+	public PortfolioStrategy getParentStrategy() {
 		return parentStrategy;
 	}
 	
@@ -377,6 +384,11 @@ public class Trade {
 		orderTimeout = timeout;
 	}
 	
+	public void setParentStrategy( PortfolioStrategy parent ) {
+		parentStrategy = parent;
+	}
+	
+	
 	
 	/**
 	 * 
@@ -396,10 +408,14 @@ public class Trade {
 		}
 		
 		private void sendOrder( OrderSingle order, final long timeout, final OrderTimeoutPolicy policy ) {
-					
+			if (parentStrategy==null) {
+				throw new RuntimeException("Trade "+this+" doesn't have a parent strategy.");
+			}
+			
 			/* send the order */
 			final OrderID id = order.getOrderID();
-			pendingOrderId = parentStrategy.getRelay().sendOrder(order);
+			pendingOrderId = id;
+			parentStrategy.getRelay().send(order);
 			parentStrategy.getRelay().info("Sending order " + id + ".");
 			
 			/* create timeout */

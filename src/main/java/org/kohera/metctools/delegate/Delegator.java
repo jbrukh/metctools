@@ -88,13 +88,12 @@ public final class Delegator {
 			for ( EventDelegate delegate : list ) {
 				Method m = key.getMethods()[0];
 				try {
-					// TODO: check that onStart and onStop go through ok
 					int length = m.getParameterTypes().length;
 					if ( length == 2 ) {
 						m.invoke(delegate,parent,message);
 					} else if ( length == 1 ) {
 						m.invoke(delegate,parent);
-					} else throw new RuntimeException("Delegate had too many parameters for method " + m.toString());
+					} else throw new RuntimeException("Delegate wrong number of parameters: " + m.toString());
 				} catch (Exception e) {
 					e.printStackTrace();
 				}

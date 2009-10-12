@@ -21,8 +21,10 @@ import org.marketcetera.strategy.RunningStrategy;
 import org.marketcetera.strategy.java.Strategy;
 import org.marketcetera.trade.BrokerID;
 import org.marketcetera.trade.ExecutionReport;
+import org.marketcetera.trade.OrderCancel;
 import org.marketcetera.trade.OrderCancelReject;
 import org.marketcetera.trade.OrderID;
+import org.marketcetera.trade.OrderReplace;
 import org.marketcetera.trade.OrderSingle;
 import org.marketcetera.client.BrokerStatusListener;
 import org.marketcetera.client.Client;
@@ -133,7 +135,7 @@ public class DelegatorStrategy extends Strategy
 		}
 		
 		/** BEGIN -- FOR METC VERSION 1.5 **/
-		public OrderID sendOrder(OrderSingle order) {
+		/*public OrderID sendOrder(OrderSingle order) {
 			return DelegatorStrategy.this.sendOrder(order);
 		}
 		
@@ -143,22 +145,22 @@ public class DelegatorStrategy extends Strategy
 		
 		public OrderID cancelReplace( OrderID orderId, OrderSingle order) {
 			return DelegatorStrategy.this.cancelReplace(orderId, order);
-		}
+		}*/
 		/** END -- FOR METC VERSION 1.5 **/
 		
 		
 		/** BEGIN -- FOR METC VERSION 1.6 **/
-		/*public void send(Object object) {
-			AdvancedStrategy.this.send(object);
+		public boolean send(Object object) {
+			return DelegatorStrategy.this.send(object);
 		}
 		
 		public OrderReplace cancelReplace( OrderID orderId, OrderSingle order, boolean sendOrder) {
-			return AdvancedStrategy.this.cancelReplace(orderId, order, sendOrder);
+			return DelegatorStrategy.this.cancelReplace(orderId, order, sendOrder);
 		}
 		
 		public OrderCancel cancelOrder( OrderID orderId, boolean sendOrder) {
-			return AdvancedStrategy.this.cancelOrder(orderId, sendOrder);
-		}*/
+			return DelegatorStrategy.this.cancelOrder(orderId, sendOrder);
+		}
 		/** END -- FOR METC VERSION 1.6 **/
 		
 		public int cancelAllOrders() {
