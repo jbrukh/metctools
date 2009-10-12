@@ -28,11 +28,13 @@ final class Trade {
 	private BigDecimal 		quantity;			// unsigned position
 	private Side 			side;				// side of the position
 	
-	private BigDecimal 		leavesQuantity;		// leavesQuantity of the pending order
-	private BigDecimal 		cumulativeQuantity;	// number of shares pending fill
+	private BigDecimal 		leavesQty;			// leavesQuantity of the pending order
+	private BigDecimal 		cumulativeQty;		// number of shares pending fill
+	private OrderStatus		orderStatus;		// order status of last (pertinent) execution report
 	private Side 			pendingSide;		// side of the incoming fills
 	private OrderID 		pendingOrderId;		// orderId of the order being filled
-	private BigDecimal 		costBasis;			// average entry price of position
+	private OrderID			cancelOrderId;
+	private BigDecimal 		averagePrice;		// average entry price of last fill
 	private TradeEvent 		lastTrade;			// last trade of the underylying symbol
 	
 	/* policies */
@@ -56,8 +58,8 @@ final class Trade {
 	}
 	
 	private void init() {
-		quantity = leavesQuantity = cumulativeQuantity = BigDecimal.ZERO;
-		costBasis = BigDecimal.ZERO;
+		quantity = leavesQty = cumulativeQty = BigDecimal.ZERO;
+		averagePrice = BigDecimal.ZERO;
 		pendingOrderId = null;
 		lastTrade = null;
 		side = pendingSide = Side.NONE;
@@ -75,7 +77,7 @@ final class Trade {
 	 * @return
 	 */
 	public BigDecimal getCostBasis() {
-		return costBasis;
+		return averagePrice;
 	}
 
 	/**
@@ -84,7 +86,7 @@ final class Trade {
 	 * @return
 	 */
 	public BigDecimal getLeavesQuantity() {
-		return leavesQuantity;
+		return leavesQty;
 	}
 
 	/**
@@ -96,7 +98,7 @@ final class Trade {
 	 * @return
 	 */
 	public BigDecimal getCumulativeQuantity() {
-		return cumulativeQuantity;
+		return cumulativeQty;
 	}
 
 	/**
@@ -127,7 +129,7 @@ final class Trade {
 	 * @return
 	 */
 	public boolean isFilling() {
-		return (pendingOrderId!=null && leavesQuantity.compareTo(BigDecimal.ZERO)!=0);
+		return (pendingOrderId!=null && leavesQty.compareTo(BigDecimal.ZERO)!=0);
 	}
 
 	/**
@@ -221,7 +223,7 @@ final class Trade {
 	 */
 	public BigDecimal getNetQuantity() {
 		BigDecimal polarity = BigDecimal.valueOf(side.value()*pendingSide.value(),0);
-		return quantity.add( polarity.multiply(cumulativeQuantity));
+		return quantity.add( polarity.multiply(cumulativeQty));
 	}
 	
 	/**
@@ -232,7 +234,11 @@ final class Trade {
 	public Portfolio getParentPortfolio() {
 		return parentPortfolio;
 	}
-		
+	
+	public OrderStatus getOrderStatus() {
+		return orderStatus;
+	}
+
 	/**
 	 * Interface for getting the latest TradeEvent.
 	 * 
@@ -251,6 +257,13 @@ final class Trade {
 		return orderProcessor;
 	}
 
+	public void scrapeReport(ExecutionReport report) {
+		orderStatus = report.getOrderStatus();
+		cumulativeQty = report.getCumulativeQuantity();
+		leavesQty = report.getLeavesQuantity();
+		pendingSide = Side.fromMetcSide(report.getSide());
+	}
+	
 	/**
 	 * Adjusts the trade information based on an incoming execution report.
 	 * 
@@ -273,29 +286,23 @@ final class Trade {
 					symbol + ": received external execution report (accepting).");
 		}
 		
-
-		final OrderStatus status = report.getOrderStatus();
+		orderStatus = report.getOrderStatus();
 		
-		if ( status==OrderStatus.New ) {
+		if ( orderStatus==OrderStatus.New ) {
+			sender.getRelay().info(this + ": Execution report status is "+orderStatus+".");
+		}
+		else if ( orderStatus == OrderStatus.PartiallyFilled ) {
+			processPartialFill(report);
+		}
+		else if ( orderStatus == OrderStatus.Filled ) {
+			processFill(report);
+		}
+		else if ( orderStatus == OrderStatus.Canceled ) {
 			
 		}
-		else if ( status==OrderStatus.PartiallyFilled ) {
-			
-		}
-		else if ( status==OrderStatus.Filled ) {
-			
-		}
-		else if ( status==OrderStatus.Rejected ) {
+		else {
 			// TODO: implement this
-			sender.getRelay().error("Execution report status is "+status+", which is not implemented.");
-		}
-		else if ( status==OrderStatus.Expired ) {
-			// TODO: implement this
-			sender.getRelay().error("Execution report status is "+status+", which is not implemented.");
-
-		}
-		else if ( status==OrderStatus.PendingCancel ) {
-			
+			sender.getRelay().error("Execution report status is "+orderStatus+", which is not implemented.");
 		}
 		
 		
@@ -356,7 +363,7 @@ final class Trade {
 				getLastPrice().floatValue(),
 				(side==Side.BUY?"+":(side==Side.SELL?"-":"")),
 				quantity.intValue(),
-				costBasis.floatValue());
+				averagePrice.floatValue());
 	}
 
 	/**
@@ -413,6 +420,10 @@ final class Trade {
 		}
 		
 		private void sendOrder( OrderSingle order, final long timeout, final OrderTimeoutPolicy policy ) {
+			
+			// TODO: may not be wise to have so many checks in this method
+			
+			/* check the parent portfolio */
 			if (parentPortfolio==null) {
 				throw new RuntimeException("Trade "+this+" doesn't have a parent portfolio.");
 			}
@@ -423,6 +434,14 @@ final class Trade {
 			if ( parentStrategy==null) {
 				throw new RuntimeException("Trade "+this+" doesn't have a parent strategy.");
 			}
+			
+			/* check pending order */
+			if ( isPending() ) {
+				parentStrategy.getRelay().error(
+						this + ": Cannot send an order while order " + pendingOrderId + " is pending.");
+				return;
+			}
+			
 			
 			/* send the order */
 			final OrderID id = order.getOrderID();
