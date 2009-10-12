@@ -63,11 +63,15 @@ public class Timer {
 	/**
 	 * Fire task after a delay.
 	 * 
+	 * If the delay is 0, then the Task is executed immediately.
+	 * If the delay is negative, then the Task is never executed.
+	 * 
 	 * @param delay
 	 * @param task
 	 * @return
 	 */
 	public TaskThread fireIn( final long delay, final Task task ) {
+		
 		TaskThread thr = new TaskThread(delay,task);
 		threads.add(thr);
 		thr.start();

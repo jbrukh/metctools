@@ -18,7 +18,7 @@ import org.marketcetera.trade.OrderStatus;
 final class Trade {
 
 	/* internal fields  */
-	transient private 
+	transient private final 
 		Portfolio 			parentPortfolio;		// parent strategy
 	private  
 		OrderProcessor 		orderProcessor;		// order processing object
@@ -26,9 +26,10 @@ final class Trade {
 	/* accounting */
 	private final MSymbol 	symbol;				// underlying symbol
 	private BigDecimal 		quantity;			// unsigned position
-	private BigDecimal 		leavesQuantity;		// leavesQuantity of the pending order
-	private BigDecimal 		pendingQuantity;	// number of shares pending fill
 	private Side 			side;				// side of the position
+	
+	private BigDecimal 		leavesQuantity;		// leavesQuantity of the pending order
+	private BigDecimal 		cumulativeQuantity;	// number of shares pending fill
 	private Side 			pendingSide;		// side of the incoming fills
 	private OrderID 		pendingOrderId;		// orderId of the order being filled
 	private BigDecimal 		costBasis;			// average entry price of position
@@ -55,7 +56,7 @@ final class Trade {
 	}
 	
 	private void init() {
-		quantity = leavesQuantity = pendingQuantity = BigDecimal.ZERO;
+		quantity = leavesQuantity = cumulativeQuantity = BigDecimal.ZERO;
 		costBasis = BigDecimal.ZERO;
 		pendingOrderId = null;
 		lastTrade = null;
@@ -87,20 +88,22 @@ final class Trade {
 	}
 
 	/**
-	 * Returns the total number of shares comprise a pending order.
+	 * With respect to a pending order, returns the cumulative quantity
+	 * of shares that have so far been filled.
+	 * 
+	 * If there is no pending order, this method returns 0.
 	 * 
 	 * @return
 	 */
-	public BigDecimal getPendingQuantity() {
-		return pendingQuantity;
+	public BigDecimal getCumulativeQuantity() {
+		return cumulativeQuantity;
 	}
 
 	/**
 	 * Returns the unsigned number of shares of this position.
 	 * 
 	 * This does not take into consideration a currently filling order,
-	 * even if some of the order has been filled.  (See getPendingQuantity()
-	 * and getLeavesQuantity().)
+	 * even if some of the order has been filled.
 	 * 
 	 * @return
 	 */
@@ -202,15 +205,23 @@ final class Trade {
 	}
 	
 	/**
-	 * Returns the number of shares that have been filled up to this
-	 * point.
+	 * Returns the instantaneous (usually unsigned) position of this trade.
+	 * 
+	 * If there is no pending order currently being filled, this method is
+	 * equivalent to getQuantity().
+	 * 
+	 * If there is a pending order currently being filled, this method returns
+	 * the instantaneous position of the trade, taking into account the fills
+	 * up to this point in time.
+	 * 
+	 * If the fills up to this point in time have caused the position to change
+	 * sides, this is denoted with a negative sign in the result.
 	 * 
 	 * @return
 	 */
-	public BigDecimal getFillingQuantity() {
+	public BigDecimal getNetQuantity() {
 		BigDecimal polarity = BigDecimal.valueOf(side.value()*pendingSide.value(),0);
-		BigDecimal alreadyFilled = pendingQuantity.subtract(leavesQuantity);
-		return quantity.add( polarity.multiply(alreadyFilled) );
+		return quantity.add( polarity.multiply(cumulativeQuantity));
 	}
 	
 	/**
@@ -243,9 +254,6 @@ final class Trade {
 	/**
 	 * Adjusts the trade information based on an incoming execution report.
 	 * 
-	 * TODO: WARNING: In the current implementation, ProfitLoss may not be correct if
-	 * the trade switches sides.
-	 * 
 	 * @param sender
 	 * @param report
 	 */
@@ -260,55 +268,82 @@ final class Trade {
 		}
 		
 		/* check the correct order id */
-		if ( !isPending() || pendingOrderId!=report.getOrderID()) {
+		if ( pendingOrderId!=report.getOrderID()) {
 			sender.getRelay().warn(
 					symbol + ": received external execution report (accepting).");
 		}
 		
-		pendingSide = Side.fromMetcSide(report.getSide());
-		pendingQuantity = report.getCumulativeQuantity();
-		leavesQuantity = report.getLeavesQuantity();
 
-		/* assign a side if you haven't already */
-		if (side==Side.NONE) {
-			side = pendingSide;
+		final OrderStatus status = report.getOrderStatus();
+		
+		if ( status==OrderStatus.New ) {
+			
+		}
+		else if ( status==OrderStatus.PartiallyFilled ) {
+			
+		}
+		else if ( status==OrderStatus.Filled ) {
+			
+		}
+		else if ( status==OrderStatus.Rejected ) {
+			// TODO: implement this
+			sender.getRelay().error("Execution report status is "+status+", which is not implemented.");
+		}
+		else if ( status==OrderStatus.Expired ) {
+			// TODO: implement this
+			sender.getRelay().error("Execution report status is "+status+", which is not implemented.");
+
+		}
+		else if ( status==OrderStatus.PendingCancel ) {
+			
 		}
 		
-			
-		/* if this is the last report... */
-		if ( report.getOrderStatus() == OrderStatus.Filled ) {
-			
-			/* check the polarity */
-			BigDecimal polarity = BigDecimal.valueOf(side.value()*pendingSide.value(),0); // 1 if same, -1 if opposite
-
-			/* switch sides if necessary */
-			if ( polarity.compareTo(BigDecimal.ZERO)<0 && pendingQuantity.compareTo(quantity)>0 ) {
-				side = side.opposite();
-			}
-			
-			/* update the position */
-			quantity = quantity.add(polarity.multiply(pendingQuantity));
-			
-			/* update average price */
-			if ( polarity.compareTo(BigDecimal.ZERO)>0 ) {
-				/* calculate average price */
-				BigDecimal totalQty = quantity.add(pendingQuantity);
-				BigDecimal avg = quantity.multiply(costBasis).add(pendingQuantity.multiply(report.getAveragePrice()));
-				costBasis = avg.divide(totalQty, BigDecimal.ROUND_HALF_EVEN);
-			}
-			
-			pendingQuantity = BigDecimal.ZERO;
-			leavesQuantity = BigDecimal.ZERO;  // TODO: check in fact this is zero.		
 		
-			/* kill the timeout thread, if any */
-			orderProcessor.killTimeoutThread();
-			
-			/* execute the fill policy, if any */
-			if ( fillPolicy != null ) {
-				fillPolicy.onFill(parentPortfolio.getParentStrategy(),
-						report.getOrderID(), this);
-			}
-		}
+		
+//		pendingSide = Side.fromMetcSide(report.getSide()); 
+//		pendingQuantity = report.getCumulativeQuantity();
+//		leavesQuantity = report.getLeavesQuantity();
+//
+//		/* assign a side if you haven't already */
+//		if (side==Side.NONE) {
+//			side = pendingSide;
+//		}
+//		
+//			
+//		/* if this is the last report... */
+//		if ( report.getOrderStatus() == OrderStatus.Filled ) {
+//			
+//			/* check the polarity */
+//			BigDecimal polarity = BigDecimal.valueOf(side.value()*pendingSide.value(),0); // 1 if same, -1 if opposite
+//
+//			/* switch sides if necessary */
+//			if ( polarity.compareTo(BigDecimal.ZERO)<0 && pendingQuantity.compareTo(quantity)>0 ) {
+//				side = side.opposite();
+//			}
+//			
+//			/* update the position */
+//			quantity = quantity.add(polarity.multiply(pendingQuantity));
+//			
+//			/* update average price */
+//			if ( polarity.compareTo(BigDecimal.ZERO)>0 ) {
+//				/* calculate average price */
+//				BigDecimal totalQty = quantity.add(pendingQuantity);
+//				BigDecimal avg = quantity.multiply(costBasis).add(pendingQuantity.multiply(report.getAveragePrice()));
+//				costBasis = avg.divide(totalQty, BigDecimal.ROUND_HALF_EVEN);
+//			}
+//			
+//			pendingQuantity = BigDecimal.ZERO;
+//			leavesQuantity = BigDecimal.ZERO;  // TODO: check in fact this is zero.		
+//		
+//			/* kill the timeout thread, if any */
+//			orderProcessor.killTimeoutThread();
+//			
+//			/* execute the fill policy, if any */
+//			if ( fillPolicy != null ) {
+//				fillPolicy.onFill(parentPortfolio.getParentStrategy(),
+//						report.getOrderID(), this);
+//			}
+//		}
 		
 	}
 	
