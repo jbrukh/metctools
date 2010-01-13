@@ -1,44 +1,64 @@
-<?xml version="1.0"?><project>
+<?xml version="1.0" encoding="UTF-8" ?>
 
+<!--
+  - Author: anshul@marketcetera.com
+  - Version: $Id$
+  -->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
-  <groupId>org.kohera.metctools</groupId>
+  <parent>
+    <groupId>org.marketcetera</groupId>
+    <artifactId>declarations</artifactId>
+    <version>1.6.0</version>
+  </parent>
+  <groupId>org.kohera</groupId>
   <artifactId>metctools</artifactId>
-  <name>Kohera's Metc Tools</name>
-  <packaging>jar</packaging>
-  
-	<parent>
-		<groupId>org.marketcetera</groupId>
-		<artifactId>source</artifactId>
-		<version>1.7.0</version>
-	</parent> 
-  
- 
-  
+  <version>1.0-SNAPSHOT</version>
+  <properties>
+    <mvn.marketcetera.version>1.6.0</mvn.marketcetera.version>
+  </properties>
+
   <dependencies>
-  
-	<!-- Compile -->
+    <!-- Compile -->
     <dependency>
-		<groupId>${mvn.public.package}</groupId>
-		<artifactId>core</artifactId>
-	</dependency>
-
-    <dependency>
-		<groupId>${mvn.public.package}</groupId>
-		<artifactId>strategy</artifactId>
-	</dependency>
-	
-  
-	<dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>3.8.1</version>
-      <scope>test</scope>
+      <groupId>org.marketcetera</groupId>
+      <artifactId>core</artifactId>
+      <version>[${mvn.marketcetera.version}]</version>
+      <scope>compile</scope>
     </dependency>
-  
-  
-  </dependencies>
+    <dependency>
+      <groupId>org.marketcetera</groupId>
+      <artifactId>strategy</artifactId>
+      <version>[${mvn.marketcetera.version}]</version>
+      <scope>compile</scope>
+    </dependency>
 
+  </dependencies>
   
-  
-  </project>
+<repositories>
+    <!-- Maven repositories for downloading various artifacts -->
+    <repository>
+      <id>central</id>
+      <url>http://repo1.maven.org/maven2</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>java.net</id>
+      <url>http://download.java.net/maven/2</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
+      <id>marketcetera</id>
+      <url>http://repo.marketcetera.org/maven</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+</project>
