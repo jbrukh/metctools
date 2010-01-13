@@ -20,7 +20,6 @@ import org.marketcetera.marketdata.MarketDataRequest;
 import org.marketcetera.strategy.RunningStrategy;
 import org.marketcetera.strategy.java.Strategy;
 import org.marketcetera.trade.BrokerID;
-import org.marketcetera.trade.Equity;
 import org.marketcetera.trade.ExecutionReport;
 import org.marketcetera.trade.OrderCancel;
 import org.marketcetera.trade.OrderCancelReject;
@@ -194,6 +193,7 @@ public class DelegatorStrategy extends Strategy
 
 	/**
 	 * Constructor.
+	 * @throws ClientInitException 
 	 * 
 	 * @throws ClientInitException 
 	 */
@@ -249,12 +249,14 @@ public class DelegatorStrategy extends Strategy
 	 * @param date
 	 * @return
 	 */
-	public Map<PositionKey<Equity>,BigDecimal> getPositions(Date date) {
+	public Map<PositionKey,BigDecimal> getPositions(Date date) {
 		try {
 			return client.getPositionsAsOf(date);
 		} catch (ConnectionException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} return null;
+		}
+		return null;
 	}
 	
 	/**

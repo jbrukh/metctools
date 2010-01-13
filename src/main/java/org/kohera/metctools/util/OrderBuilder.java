@@ -158,16 +158,6 @@ public class OrderBuilder {
 		order.setSide(side);
 		return this;
 	}
-	
-	/**
-	 * Sets the side value for the order (using metctools Side class).
-	 * 
-	 * @param side
-	 * @return
-	 */
-	public OrderBuilder withSide( org.kohera.metctools.portfolio.Side side ) {
-		return this.withSide( side.toMetcSide() );
-	}
 
 	/**
 	 * Sets symbol for the order.
