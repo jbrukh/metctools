@@ -29,7 +29,7 @@ public interface Portfolio {
 	 * 
 	 * @param symbol
 	 */
-	public void removeTrade( MSymbol symbol );
+	public void removeTrade( String symbol );
 	
 	/**
 	 * Returns true if and only if a Trade object for this symbol exists in the
@@ -38,7 +38,7 @@ public interface Portfolio {
 	 * @param symbol
 	 * @return
 	 */
-	public boolean hasTrade( MSymbol symbol );
+	public boolean hasTrade( String symbol );
 	
 	/**
 	 * Returns the Trade object by symbol (or null).
@@ -46,7 +46,7 @@ public interface Portfolio {
 	 * @param symbol
 	 * @return
 	 */
-	public Trade getTrade( MSymbol symbol );
+	public Trade getTrade( String symbol );
 	
 	/**
 	 * Returns a Collection of all the trades in this Portfolio.
@@ -148,4 +148,5 @@ public interface Portfolio {
 	public PortfolioStrategy getParentStrategy();
 	
 	public Trade createTrade(String symbol);
+
 }

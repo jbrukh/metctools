@@ -16,7 +16,7 @@ import org.marketcetera.trade.OrderID;
 import org.marketcetera.trade.OrderSingle;
 import org.marketcetera.trade.OrderStatus;
 
-final class Trade {
+public final class Trade {
 
 	/* internal fields  */
 	transient private final 
@@ -25,8 +25,8 @@ final class Trade {
 		OrderProcessor 		orderProcessor;		// order processing object
 
 	/* accounting */
-	private final MSymbol 	symbol;				// underlying symbol
-	private BigDecimal 		quantity;			// unsigned position
+	private final String 	symbol;				// underlying symbol
+	private BigDecimal 		quantity;			// unsigned number of shares
 	private Side 			side;				// side of the position
 	
 	private BigDecimal 		leavesQty;			// leavesQuantity of the pending order
@@ -34,7 +34,7 @@ final class Trade {
 	private OrderStatus		orderStatus;		// order status of last (pertinent) execution report
 	private Side 			pendingSide;		// side of the incoming fills
 	private OrderID 		pendingOrderId;		// orderId of the order being filled
-	private OrderID			cancelOrderId;
+	private OrderID			cancelOrderId;      // ...?
 	private BigDecimal 		averagePrice;		// average entry price of last fill
 	private TradeEvent 		lastTrade;			// last trade of the underylying symbol
 	
@@ -54,7 +54,7 @@ final class Trade {
 	 * @param brokerId
 	 * @param account
 	 */
-	public Trade( MSymbol symbol, Portfolio parent ) {
+	public Trade( String symbol, Portfolio parent ) {
 		this.symbol = symbol;
 		this.parentPortfolio = parent;
 		init();
@@ -110,6 +110,7 @@ final class Trade {
 	 * This does not take into consideration a currently filling order,
 	 * even if some of the order has been filled.
 	 * 
+	 * @see getNetQuantity()
 	 * @return
 	 */
 	public BigDecimal getQuantity() {
@@ -121,13 +122,16 @@ final class Trade {
 	 * 
 	 * @return
 	 */
-	public MSymbol getSymbol() {
+	public String getSymbol() {
 		return symbol;
 	}
 
 	/**
 	 * Returns true if the Trade is currently has a pending order
-	 * that is filling.
+	 * that is filling.  
+	 * 
+	 * The order must have originated within the framework through 
+	 * the OrderProcessor and/or via the order() method.
 	 * 
 	 * @return
 	 */
@@ -268,10 +272,11 @@ final class Trade {
 	 * @param report
 	 */
 	private void scrapeReport(ExecutionReport report) {
-		orderStatus = report.getOrderStatus();
-		cumulativeQty = report.getCumulativeQuantity();
-		leavesQty = report.getLeavesQuantity();
-		pendingSide = Side.fromMetcSide(report.getSide());
+		orderStatus 	= report.getOrderStatus();
+		cumulativeQty 	= report.getCumulativeQuantity();
+		leavesQty 		= report.getLeavesQuantity();
+		pendingSide 	= Side.fromMetcSide(report.getSide());
+		averagePrice 	= report.getAveragePrice();
 	}
 	
 	/**
@@ -285,7 +290,7 @@ final class Trade {
 			ExecutionReport report) {
 		
 		/* check the correct symbol */
-		if ( symbol!=report.getSymbol()) {
+		if ( !symbol.equals(report.getSymbol().toString())) {
 			logger.warn( ">>> " +
 					symbol + ": received external execution report (ignoring).");
 			logger.debug(">>> Incorrect symbol (not " + symbol + "): " + report);
@@ -293,7 +298,7 @@ final class Trade {
 		}
 		
 		/* check the correct order id */
-		if ( pendingOrderId!=report.getOrderID()) {
+		if ( !pendingOrderId.equals(report.getOrderID())) {
 			logger.warn( ">>> " +
 					symbol + ": received external execution report (accepting).");
 			logger.debug("Not pending: " + report);
@@ -302,7 +307,7 @@ final class Trade {
 		orderStatus = report.getOrderStatus();
 		
 		if ( orderStatus==OrderStatus.New ) {
-			logger.info(this + ": Execution report status is "+orderStatus+".");
+			processNew(report);
 		}
 		else if ( orderStatus == OrderStatus.PartiallyFilled ) {
 			processPartialFill(report);
@@ -320,13 +325,29 @@ final class Trade {
 		
 	}
 	
+	private void processNew( ExecutionReport report ) {
+		logger.info(
+				">>> " + this + 
+				": Execution report status is "+orderStatus+"."
+				);
+		logger.trace(">>> " + report);
+		
+		/* get the info */
+		scrapeReport(report);
+	}
+	
 	/**
 	 * Internal method for processing partial fills.
 	 * 
 	 * @param report
 	 */
 	private void processPartialFill( ExecutionReport report ) {
+		logger.info(">>> " + this + ": Partial fill on " + pendingOrderId + ".");
+		logger.trace(">>> " + report);
+	
 		
+		scrapeReport(report);
+		side = Side.fromMetcSide(report.getSide());
 	}
 	
 	/**
@@ -335,7 +356,37 @@ final class Trade {
 	 * @param report
 	 */
 	private void processFill( ExecutionReport report ) {
+
+		/* this might need to be set here 
+		 * if there are no partials */
+		if ( side==Side.NONE ) {
+			side = Side.fromMetcSide(report.getSide());
+		}
+
+		scrapeReport(report);
 		
+		/* 1 = position and fills are the same side; 
+		 * -1 = position and fills are different side;
+		 * recall that all quantities are unsigned */
+		BigDecimal polarity = side.toBigDecimal().multiply(
+				Side.fromMetcSide(report.getSide()).toBigDecimal());
+		quantity = quantity.add(cumulativeQty.multiply(polarity));
+		
+		/* check if we have switched sides */
+		if ( quantity.compareTo(BigDecimal.ZERO)<0) {
+			side = side.opposite();
+			BigDecimal inv = BigDecimal.valueOf(-1L,0);
+			quantity = quantity.multiply(inv);
+			logger.info(">>> " + this + ": Position has switched sides!");
+		}
+
+		logger.info(">>> " + this + ": Order " + pendingOrderId + " has been filled.");
+
+		
+		/* clean up */
+		leavesQty = cumulativeQty = BigDecimal.ZERO;
+		pendingOrderId = null;
+		pendingSide = Side.NONE;
 	}
 	
 	/**
@@ -349,13 +400,16 @@ final class Trade {
 	 * Formats this Trade object for text output.
 	 */
 	public String toString() {
-		return String.format("{%s:[%.2f]:%s%d@%.4f}",
+		return String.format("{%s:[%.2f]:%s%d%s@%.4f}",
 				getSymbol(),
 				getLastPrice().floatValue(),
 				(side==Side.BUY?"+":(side==Side.SELL?"-":"")),
 				quantity.intValue(),
+				/* shows pending values if order is pending */
+				isPending()? "(" + cumulativeQty + "cq/"+ leavesQty + "lq)" : "",
 				averagePrice.floatValue());
 	}
+	
 
 	/**
 	 * Sets the FillPolicy for this Trade.
@@ -398,7 +452,7 @@ final class Trade {
 	 * 
 	 * 
 	 */
-	private final class OrderProcessor {
+	public final class OrderProcessor {
 		
 		private OrderBuilder orderBuilder;
 		private final Timer timer;

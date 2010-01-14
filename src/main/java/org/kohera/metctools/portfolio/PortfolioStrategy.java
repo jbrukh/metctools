@@ -48,7 +48,9 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		@Override
 		public void onExecutionReport(DelegatorStrategy sender,
 				ExecutionReport report) {
-			MSymbol symbol = report.getSymbol();
+			String symbol = report.getSymbol().toString();
+			logger.trace(">>> Received report for symbol '"+symbol+"' ");
+			
 			if ( portfolio.hasTrade(symbol) ) {
 				portfolio.getTrade(symbol)
 					.acceptExecutionReport(PortfolioStrategy.this, report);
@@ -60,7 +62,8 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 
 		@Override
 		public void onTrade(DelegatorStrategy sender, TradeEvent tradeEvent) {
-			MSymbol symbol = tradeEvent.getSymbol();
+			String symbol = tradeEvent.getSymbol().toString();
+			//logger.trace(">>> Received trade for symbol '"+symbol+"'");
 			if ( portfolio.hasTrade(symbol) ) {
 				portfolio.getTrade(symbol)
 					.acceptTrade(tradeEvent);

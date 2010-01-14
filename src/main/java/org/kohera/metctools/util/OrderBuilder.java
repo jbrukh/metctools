@@ -165,19 +165,9 @@ public class OrderBuilder {
 	 * @param symbol
 	 * @return
 	 */
-	public OrderBuilder withSymbol( MSymbol symbol ) {
-		order.setSymbol(symbol);
-		return this;
-	}
-	
-	/**
-	 * Sets symbol value for the order.
-	 * 
-	 * @param symbol
-	 * @return
-	 */
 	public OrderBuilder withSymbol( String symbol ) {
-		return this.withSymbol( new MSymbol(symbol) );
+		order.setSymbol(new MSymbol(symbol));
+		return this;
 	}
 	
 	/**
@@ -201,7 +191,7 @@ public class OrderBuilder {
 	 * @param side
 	 * @return
 	 */
-	public OrderBuilder makeMarket(BrokerID brokerId, String account, MSymbol symbol, BigDecimal qty, Side side ) {
+	public OrderBuilder makeMarket(BrokerID brokerId, String account, String symbol, BigDecimal qty, Side side ) {
 		return makeMarket(symbol,qty,side)
 			.withBrokerID(brokerId)
 			.withAccount(account);
@@ -215,7 +205,7 @@ public class OrderBuilder {
 	 * @param side
 	 * @return
 	 */
-	public OrderBuilder makeMarket(MSymbol symbol, BigDecimal qty, Side side) {
+	public OrderBuilder makeMarket(String symbol, BigDecimal qty, Side side) {
 		return this
 			.withSymbol(symbol)
 			.withQuantity(qty)

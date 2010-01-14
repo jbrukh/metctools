@@ -14,7 +14,7 @@ import com.sun.net.ssl.internal.ssl.Debug;
 final class PortfolioImpl implements Portfolio {
 
 	/* trades */
-	private Map<MSymbol,Trade>	trades;
+	private Map<String,Trade>	trades;
 	private PortfolioStrategy	parentStrategy;
 	private BrokerID			brokerId;
 	private String				account;
@@ -35,7 +35,7 @@ final class PortfolioImpl implements Portfolio {
 	 * 
 	 */
 	public PortfolioImpl(PortfolioStrategy parent) {
-		trades = new LinkedHashMap<MSymbol,Trade>();
+		trades = new LinkedHashMap<String,Trade>();
 		parentStrategy = parent;
 	}
 	
@@ -84,7 +84,7 @@ final class PortfolioImpl implements Portfolio {
 			trade.setFillPolicy(fillPolicy);
 		}
 		
-		trades.put(trade.getSymbol(),trade);
+		trades.put(trade.getSymbol().toString(),trade);
 		
 		/* logging */
 		logger.trace(">>> Added trade to portfolio: " + trade);
@@ -98,17 +98,17 @@ final class PortfolioImpl implements Portfolio {
 	}
 
 	@Override
-	public Trade getTrade(MSymbol symbol) {
+	public Trade getTrade(String symbol) {
 		return trades.get(symbol);
 	}
-
+	
 	@Override
 	public Collection<Trade> getTrades() {
 		return trades.values();
 	}
 
 	@Override
-	public boolean hasTrade(MSymbol symbol) {
+	public boolean hasTrade(String symbol) {
 		return trades.containsKey(symbol);
 	}
 
@@ -121,7 +121,7 @@ final class PortfolioImpl implements Portfolio {
 	}
 
 	@Override
-	public void removeTrade(MSymbol symbol) {
+	public void removeTrade(String symbol) {
 		trades.remove(symbol);
 
 		/* logging */
@@ -192,7 +192,7 @@ final class PortfolioImpl implements Portfolio {
 		
 		String[] symbols = new String[trades.size()];
 		int i = 0;
-		for ( MSymbol symbol : trades.keySet() ) {
+		for ( String symbol : trades.keySet() ) {
 			symbols[i] = symbol.toString();
 			i++;
 		}
@@ -209,7 +209,7 @@ final class PortfolioImpl implements Portfolio {
 		if (trades.containsKey(symbol) ) return trades.get(symbol);
 		
 		Trade trade =
-			new Trade(new MSymbol(symbol),this);
+			new Trade(symbol,this);
 		addTrade(trade);
 		return trade;
 	}
