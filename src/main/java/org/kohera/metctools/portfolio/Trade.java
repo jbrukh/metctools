@@ -42,6 +42,7 @@ public final class Trade {
 	private long 			orderTimeout;		// default timeout in milliseconds
 	public FillPolicy 		fillPolicy;			// default fill policy (what to do on a fill?)
 	public OrderTimeoutPolicy orderTimeoutPolicy; // default order timeout policy (what to do if order times out?)
+	public RejectPolicy		rejectPolicy;
 	
 	/* logging */
 	private final static Logger logger = Logger.getLogger(Trade.class);
@@ -69,6 +70,7 @@ public final class Trade {
 		
 		fillPolicy = FillPolicies.ON_FILL_WARN;
 		orderTimeoutPolicy = OrderTimeoutPolicies.ON_TIMEOUT_WARN;
+		rejectPolicy = RejectPolicies.ON_REJECT_WARN;
 		orderTimeout = 60*1000;
 		
 		orderProcessor = new OrderProcessor();	
@@ -309,6 +311,9 @@ public final class Trade {
 		if ( orderStatus==OrderStatus.New ) {
 			processNew(report);
 		}
+		else if ( orderStatus==OrderStatus.PendingNew ) {
+			// nothing
+		}
 		else if ( orderStatus == OrderStatus.PartiallyFilled ) {
 			processPartialFill(report);
 		}
@@ -318,6 +323,9 @@ public final class Trade {
 		else if ( orderStatus == OrderStatus.Canceled ) {
 			processCanceled(report);
 		}
+		else if ( orderStatus == OrderStatus.Rejected ) {
+			processRejected(report);
+		}
 		else {
 			// TODO: implement this
 			logger.error("Execution report status is "+orderStatus+", which is not implemented.");
@@ -326,14 +334,11 @@ public final class Trade {
 	}
 	
 	private void processNew( ExecutionReport report ) {
-		logger.info(
-				">>> " + this + 
-				": Execution report status is "+orderStatus+"."
-				);
-		logger.trace(">>> " + report);
-		
 		/* get the info */
 		scrapeReport(report);
+		
+		/* logging */
+		logger.trace(">>> " + report);
 	}
 	
 	/**
@@ -342,12 +347,12 @@ public final class Trade {
 	 * @param report
 	 */
 	private void processPartialFill( ExecutionReport report ) {
-		logger.info(">>> " + this + ": Partial fill on " + pendingOrderId + ".");
-		logger.trace(">>> " + report);
-	
-		
 		scrapeReport(report);
 		side = Side.fromMetcSide(report.getSide());
+		
+		/* logging */
+		logger.info(">>> " + this + ": Partial fill on " + pendingOrderId + ".");
+		logger.trace(">>> " + report);
 	}
 	
 	/**
@@ -380,13 +385,18 @@ public final class Trade {
 			logger.info(">>> " + this + ": Position has switched sides!");
 		}
 
-		logger.info(">>> " + this + ": Order " + pendingOrderId + " has been filled.");
-
+		/* kill the timeout thread, as the order has been filled */
+		orderProcessor.killTimeoutThread();
 		
 		/* clean up */
 		leavesQty = cumulativeQty = BigDecimal.ZERO;
+		pendingSide = Side.NONE;		
+		OrderID orderID = pendingOrderId;
 		pendingOrderId = null;
-		pendingSide = Side.NONE;
+		
+		/* order has been filled -- execute fill policy*/
+		fillPolicy.onFill(parentPortfolio.getParentStrategy(), 
+				            orderID, this);		
 	}
 	
 	/**
@@ -396,6 +406,12 @@ public final class Trade {
 	private void processCanceled( ExecutionReport report ) {
 		
 	}
+	
+	private void processRejected( ExecutionReport report ) {
+		rejectPolicy.onReject(parentPortfolio.getParentStrategy(),
+				report.getOrderID(),this,report);
+	}
+	
 	/**
 	 * Formats this Trade object for text output.
 	 */
@@ -406,7 +422,7 @@ public final class Trade {
 				(side==Side.BUY?"+":(side==Side.SELL?"-":"")),
 				quantity.intValue(),
 				/* shows pending values if order is pending */
-				isPending()? "(" + cumulativeQty + "cq/"+ leavesQty + "lq)" : "",
+				isFilling()? "(" + cumulativeQty + "cq/"+ leavesQty + "lq)" : "",
 				averagePrice.floatValue());
 	}
 	
@@ -421,6 +437,18 @@ public final class Trade {
 	 */
 	public void setFillPolicy( FillPolicy policy ) {
 		fillPolicy = policy;
+	}
+
+	/**
+	 * Sets the RejectPolicy for this Trade.
+	 * 
+	 * When an order is rejected, the RejectPolicy.onReject()
+	 * method is executed.
+	 * 
+	 * @param policy
+	 */
+	public void setRejectPolicy( RejectPolicy policy ) {
+		rejectPolicy = policy;
 	}
 	
 	/**

@@ -132,6 +132,12 @@ public interface Portfolio {
 	 */
 	public void clearFillPolicy();
 	
+	
+	public void setRejectPolicy(RejectPolicy policy);
+	public void clearRejectPolicy();
+	
+	
+	
 	/**
 	 * Get the number of Trades in the Portfolio.
 	 * 

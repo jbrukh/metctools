@@ -1,5 +1,6 @@
 package org.kohera.metctools.portfolio;
 
+import org.apache.log4j.Logger;
 import org.kohera.metctools.DelegatorStrategy;
 import org.marketcetera.trade.OrderID;
 
@@ -18,7 +19,8 @@ public final class OrderTimeoutPolicies {
 	 */
 	public final static OrderTimeoutPolicy ON_TIMEOUT_WARN = new OrderTimeoutPolicy() {
 		public void onOrderTimeout(DelegatorStrategy sender, OrderID orderId, long timeout, Trade trade) {
-			sender.getFramework().warn("Could not fill order in " + timeout + " ms. (Ignoring)");
+			Logger.getLogger(PortfolioStrategy.class)
+			  .warn(">>> Could not fill order in " + timeout + " ms. (Ignoring)");
 		}		
 	};
 	
@@ -29,7 +31,8 @@ public final class OrderTimeoutPolicies {
 	 */
 	public final static OrderTimeoutPolicy ON_TIMEOUT_CANCEL = new OrderTimeoutPolicy() {
 		public void onOrderTimeout(DelegatorStrategy sender, OrderID orderId, long timeout, Trade trade) {
-			sender.getFramework().warn("Could not fill order in " + timeout + " ms. (Canceling)");
+			Logger.getLogger(PortfolioStrategy.class)
+			  .warn(">>> Could not fill order in " + timeout + " ms. (Canceling)");
 			sender.getFramework().cancelOrder(orderId,true);
 		}		
 	};

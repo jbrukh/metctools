@@ -206,6 +206,7 @@ public class OrderBuilder {
 	 * @return
 	 */
 	public OrderBuilder makeMarket(String symbol, BigDecimal qty, Side side) {
+		newOrder();
 		return this
 			.withSymbol(symbol)
 			.withQuantity(qty)

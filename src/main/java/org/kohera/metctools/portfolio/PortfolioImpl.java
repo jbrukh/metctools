@@ -22,7 +22,9 @@ final class PortfolioImpl implements Portfolio {
 	/* default policies */
 	private FillPolicy 			fillPolicy;
 	private OrderTimeoutPolicy 	orderTimeoutPolicy;
+	private RejectPolicy 		rejectPolicy;
 	private Long 				orderTimeout;
+	
 	/*
 	 * TODO -- add policies for Reject, CancelReject, etc.
 	 */
@@ -82,6 +84,10 @@ final class PortfolioImpl implements Portfolio {
 		
 		if ( fillPolicy != null ) {
 			trade.setFillPolicy(fillPolicy);
+		}
+		
+		if ( rejectPolicy != null ) {
+			trade.setRejectPolicy(rejectPolicy);
 		}
 		
 		trades.put(trade.getSymbol().toString(),trade);
@@ -144,6 +150,22 @@ final class PortfolioImpl implements Portfolio {
 		fillPolicy = null;
 	}
 
+	@Override
+	public void setRejectPolicy(final RejectPolicy policy) {
+		rejectPolicy = policy;
+		forEach( new Action<Trade>() {
+			@Override
+			public void performAction(Trade trade) {
+				trade.setRejectPolicy(policy);
+			}
+		});
+	}
+	
+	@Override
+	public void clearRejectPolicy() {
+		rejectPolicy = null;
+	}
+	
 	@Override
 	public void setOrderTimeoutPolicy(final OrderTimeoutPolicy policy) {
 		orderTimeoutPolicy = policy;

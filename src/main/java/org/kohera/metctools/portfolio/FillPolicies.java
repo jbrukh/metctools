@@ -1,5 +1,6 @@
 package org.kohera.metctools.portfolio;
 
+import org.apache.log4j.Logger;
 import org.kohera.metctools.DelegatorStrategy;
 import org.marketcetera.trade.OrderID;
 
@@ -19,7 +20,8 @@ public class FillPolicies {
 		@Override
 		public void onFill(DelegatorStrategy sender, OrderID orderId,
 				Trade trade) {
-			sender.getFramework().warn("Filled order " + orderId + " for " + trade);
+			Logger.getLogger(PortfolioStrategy.class)
+			  .info(">>> " + trade + ": Filled order " + orderId + ".");
 		}		
 	};
 }
