@@ -62,7 +62,7 @@ public class DelegatorStrategy extends Strategy
 	/* fields */
 	private Client 		client;
 	private Delegator 	delegator;
-	private Relay 		relay;
+	private Framework 	framework;
 	
 	/* status listeners*/
 	private final BrokerStatusListener BROKER_STATUS_LISTENER;
@@ -76,7 +76,7 @@ public class DelegatorStrategy extends Strategy
 	 *
 	 * TODO: Implement full API.
 	 */
-	public class Relay {
+	public class Framework {
 	
 		public String getParameter(String key) {
 			return DelegatorStrategy.this.getParameter(key);
@@ -203,7 +203,7 @@ public class DelegatorStrategy extends Strategy
 
 		/* delegates */
 		delegator = new Delegator(this);
-		relay = new Relay();
+		framework = new Framework();
 		
 		/* event listening init */
 		client = ClientManager.getInstance();
@@ -277,10 +277,9 @@ public class DelegatorStrategy extends Strategy
 	 * Returns the relay, so that action methods of this Strategy object can be called.
 	 * @return
 	 */
-	public Relay getRelay() {
-		return relay;
+	public Framework getFramework() {
+		return framework;
 	}
-
 	
 	/**
 	 * Events.  All incoming events are delegated to the appropriate

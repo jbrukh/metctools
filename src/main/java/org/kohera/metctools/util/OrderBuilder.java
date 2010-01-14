@@ -21,10 +21,10 @@ import org.marketcetera.trade.TimeInForce;
 public class OrderBuilder {
 	
 	/* fields */
-	private OrderSingle order;
-	private BrokerID defaultBrokerId;
-	private String defaultAccount;
-	private TimeInForce defaultTimeInForce;
+	private OrderSingle 	order;
+	private BrokerID 		defaultBrokerId;
+	private String 			defaultAccount;
+	private TimeInForce 	defaultTimeInForce;
 	
 	/**
 	 * Create a new instance of OrderBuilder.
@@ -202,7 +202,9 @@ public class OrderBuilder {
 	 * @return
 	 */
 	public OrderBuilder makeMarket(BrokerID brokerId, String account, MSymbol symbol, BigDecimal qty, Side side ) {
-		return makeMarket(symbol,qty,side).withBrokerID(brokerId).withAccount(account);
+		return makeMarket(symbol,qty,side)
+			.withBrokerID(brokerId)
+			.withAccount(account);
 	}
 	
 	/**
