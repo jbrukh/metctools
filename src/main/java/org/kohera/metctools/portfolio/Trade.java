@@ -2,6 +2,7 @@ package org.kohera.metctools.portfolio;
 
 import java.math.BigDecimal;
 
+import org.apache.log4j.Logger;
 import org.kohera.metctools.util.OrderBuilder;
 import org.kohera.metctools.util.Timer;
 import org.kohera.metctools.util.Timer.Task;
@@ -42,6 +43,8 @@ final class Trade {
 	public FillPolicy 		fillPolicy;			// default fill policy (what to do on a fill?)
 	public OrderTimeoutPolicy orderTimeoutPolicy; // default order timeout policy (what to do if order times out?)
 	
+	/* logging */
+	private final static Logger logger = Logger.getLogger(Trade.class);
 	
 	/**
 	 * Create a new Trade object instance.
@@ -257,7 +260,14 @@ final class Trade {
 		return orderProcessor;
 	}
 
-	public void scrapeReport(ExecutionReport report) {
+	
+	/**
+	 * Utility method that scrapes the relevant information
+	 * from an incoming execution report.
+	 * 
+	 * @param report
+	 */
+	private void scrapeReport(ExecutionReport report) {
 		orderStatus = report.getOrderStatus();
 		cumulativeQty = report.getCumulativeQuantity();
 		leavesQty = report.getLeavesQuantity();
@@ -273,23 +283,26 @@ final class Trade {
 	
 	public final void acceptExecutionReport(DelegatorStrategy sender,
 			ExecutionReport report) {
+		
 		/* check the correct symbol */
 		if ( symbol!=report.getSymbol()) {
-			sender.getFramework().warn(
+			logger.warn( ">>> " +
 					symbol + ": received external execution report (ignoring).");
+			logger.debug(">>> Incorrect symbol (not " + symbol + "): " + report);
 			return;
 		}
 		
 		/* check the correct order id */
 		if ( pendingOrderId!=report.getOrderID()) {
-			sender.getFramework().warn(
+			logger.warn( ">>> " +
 					symbol + ": received external execution report (accepting).");
+			logger.debug("Not pending: " + report);
 		}
 		
 		orderStatus = report.getOrderStatus();
 		
 		if ( orderStatus==OrderStatus.New ) {
-			sender.getFramework().info(this + ": Execution report status is "+orderStatus+".");
+			logger.info(this + ": Execution report status is "+orderStatus+".");
 		}
 		else if ( orderStatus == OrderStatus.PartiallyFilled ) {
 			processPartialFill(report);
@@ -298,23 +311,40 @@ final class Trade {
 			processFill(report);
 		}
 		else if ( orderStatus == OrderStatus.Canceled ) {
-			
+			processCanceled(report);
 		}
 		else {
 			// TODO: implement this
-			sender.getFramework().error("Execution report status is "+orderStatus+", which is not implemented.");
+			logger.error("Execution report status is "+orderStatus+", which is not implemented.");
 		}
 		
 	}
 	
+	/**
+	 * Internal method for processing partial fills.
+	 * 
+	 * @param report
+	 */
 	private void processPartialFill( ExecutionReport report ) {
 		
 	}
 	
+	/**
+	 * Internal method for processing fills.
+	 * 
+	 * @param report
+	 */
 	private void processFill( ExecutionReport report ) {
 		
 	}
 	
+	/**
+	 * Internal method for processing cancels.
+	 * @param report
+	 */
+	private void processCanceled( ExecutionReport report ) {
+		
+	}
 	/**
 	 * Formats this Trade object for text output.
 	 */
@@ -365,6 +395,8 @@ final class Trade {
 	 * 
 	 * Order Processor.
 	 * 
+	 * 
+	 * 
 	 */
 	private final class OrderProcessor {
 		
@@ -386,19 +418,19 @@ final class Trade {
 			
 			/* check the parent portfolio */
 			if (parentPortfolio==null) {
-				throw new RuntimeException("Trade "+this+" doesn't have a parent portfolio.");
+				throw new RuntimeException("Trade "+Trade.this+" doesn't have a parent portfolio.");
 			}
 			
 			/* get the parent strategy */
 			final PortfolioStrategy parentStrategy = 
 				parentPortfolio.getParentStrategy();
 			if ( parentStrategy==null) {
-				throw new RuntimeException("Trade "+this+" doesn't have a parent strategy.");
+				throw new RuntimeException("Trade "+Trade.this+" doesn't have a parent strategy.");
 			}
 			
 			/* check pending order */
 			if ( isPending() ) {
-				parentStrategy.getFramework().error(
+				logger.error( ">>> " +
 						this + ": Cannot send an order while order " + pendingOrderId + " is pending.");
 				return;
 			}
@@ -408,7 +440,7 @@ final class Trade {
 			final OrderID id = order.getOrderID();
 			pendingOrderId = id;
 			parentStrategy.getFramework().send(order);
-			parentStrategy.getFramework().info("Sending order " + id + ".");
+			logger.info(">>> Sending order " + id + ".");
 			
 			/* create timeout */
 			orderTimeoutThr = timer.fireIn(timeout, new Task() {
@@ -427,6 +459,14 @@ final class Trade {
 			}
 		}
 		
+		/**
+		 * Send a market order.
+		 * 
+		 * @param qty
+		 * @param side
+		 * @param timeout
+		 * @param policy
+		 */
 		public void marketOrder( BigDecimal qty, Side side, long timeout, OrderTimeoutPolicy policy ) {
 			OrderSingle order = orderBuilder
 									.makeMarket(symbol, qty, side.toMetcSide())
@@ -434,58 +474,140 @@ final class Trade {
 			sendOrder(order,timeout,policy);
 		}
 		
+		/**
+		 * Send a market order.
+		 * 
+		 * @param qty
+		 * @param side
+		 * @param timeout
+		 */
 		public void marketOrder( BigDecimal qty, Side side, long timeout ) {
 			marketOrder(qty,side,timeout,orderTimeoutPolicy);
 		}
 
+		/**
+		 * Send a market order.
+		 * 
+		 * @param qty
+		 * @param side
+		 */
 		public void marketOrder( BigDecimal qty, Side side ) {
 			marketOrder(qty,side,orderTimeout,orderTimeoutPolicy);
 		}
 		
+		/**
+		 * Send a long market order.
+		 * 
+		 * @param qty
+		 * @param timeout
+		 * @param policy
+		 */
 		public void longTradeMarket(BigDecimal qty, long timeout, OrderTimeoutPolicy policy) {
 			marketOrder(qty,Side.BUY,timeout,policy);
 		}
-
+		
+		/**
+		 * Send a long market order.
+		 * 
+		 * @param qty
+		 * @param timeout
+		 */
 		public void longTradeMarket(BigDecimal qty, long timeout) {
 			longTradeMarket(qty, timeout, orderTimeoutPolicy);
 		}
 	
+		/**
+		 * Send a long market order.
+		 * 
+		 * @param qty
+		 */
 		public void longTradeMarket(BigDecimal qty) {
 			longTradeMarket(qty, orderTimeout, orderTimeoutPolicy);
 		}
-	
+		
+		/**
+		 * Send a short market order.
+		 * 
+		 * @param qty
+		 * @param timeout
+		 * @param policy
+		 */
 		public void shortTradeMarket(BigDecimal qty, long timeout, OrderTimeoutPolicy policy) {
 			marketOrder(qty,Side.SELL,timeout,policy);
 		}
 			
+		/**
+		 * Send a short market order.
+		 * 
+		 * @param qty
+		 * @param timeout
+		 */
 		public void shortTradeMarket(BigDecimal qty, long timeout) {
 			shortTradeMarket(qty, timeout, orderTimeoutPolicy);
 		}
-	
+		
+		/**
+		 * Send a short market order.
+		 * 
+		 * @param qty
+		 */
 		public void shortTradeMarket(BigDecimal qty) {
 			shortTradeMarket(qty, orderTimeout, orderTimeoutPolicy);
 		}
 		
+		/**
+		 * Zero this trade using a market order.
+		 * 
+		 * @param timeout
+		 * @param policy
+		 */
 		public void closeTradeMarket(long timeout, OrderTimeoutPolicy policy) {
 			reduceTradeMarket(quantity,timeout,policy);
 		}
 		
+		/**
+		 * Zero this trade using a market order.
+		 * 
+		 * @param timeout
+		 */
 		public void closeTradeMarket(long timeout) {
 			closeTradeMarket(timeout,orderTimeoutPolicy);
 		}
 		
+		/**
+		 * Zero this trade using a market order.
+		 * 
+		 */
 		public void closeTradeMarket() {
 			closeTradeMarket(orderTimeout,orderTimeoutPolicy);
 		}
 		
+		/**
+		 * Reduce this trade by a specified quantity. (Side is
+		 * traded opposite to the position's side.)
+		 * 
+		 * @param qty
+		 * @param timeout
+		 * @param policy
+		 */
 		public void reduceTradeMarket(BigDecimal qty, long timeout, OrderTimeoutPolicy policy) {
 			marketOrder(qty,side.opposite(),timeout,policy);
 		}
-
+		
+		/**
+		 * Reduce this trade by a specified quantity. (Side is
+		 * traded opposite to the position's side.)
+		 * 
+		 */
 		public void reduceTradeMarket(BigDecimal qty, long timeout) {
 			reduceTradeMarket(qty,timeout,orderTimeoutPolicy);
 		}
 		
+		/**
+		 * Reduce this trade by a specified quantity. (Side is
+		 * traded opposite to the position's side.)
+		 * 
+		 */
 		public void reduceTradeMarket(BigDecimal qty) {
 			reduceTradeMarket(qty,orderTimeout,orderTimeoutPolicy);
 		}

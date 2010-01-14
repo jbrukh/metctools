@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
 import org.marketcetera.trade.BrokerID;
 import org.marketcetera.trade.MSymbol;
 
@@ -22,6 +23,12 @@ final class PortfolioImpl implements Portfolio {
 	private FillPolicy 			fillPolicy;
 	private OrderTimeoutPolicy 	orderTimeoutPolicy;
 	private Long 				orderTimeout;
+	/*
+	 * TODO -- add policies for Reject, CancelReject, etc.
+	 */
+
+	/* logging */
+	private final static Logger logger = Logger.getLogger(PortfolioImpl.class);
 	
 	/**
 	 * Create a new PortfolioImpl instance.
@@ -55,6 +62,16 @@ final class PortfolioImpl implements Portfolio {
 	
 	@Override
 	public void addTrade(Trade trade) {
+		
+		if ( trades.containsKey(trade.getSymbol())) {
+			logger.error(">>> Trade for symbol " + 
+					trade.getSymbol() + " already exists.");
+			return;
+		}
+		
+		/* set the policies for the trades from the portfolio,
+		 * unless they are already customized
+		 */
 		if ( orderTimeoutPolicy!=null ) {
 			trade.setOrderTimeoutPolicy(orderTimeoutPolicy);
 		}
@@ -68,6 +85,9 @@ final class PortfolioImpl implements Portfolio {
 		}
 		
 		trades.put(trade.getSymbol(),trade);
+		
+		/* logging */
+		logger.trace(">>> Added trade to portfolio: " + trade);
 	}
 
 	@Override
@@ -95,11 +115,17 @@ final class PortfolioImpl implements Portfolio {
 	@Override
 	public void removeTrade(Trade trade) {
 		trades.remove(trade.getSymbol());
+		
+		/* logging */
+		logger.trace(">>> Removed, if it existed, from portfolio the trade: " + trade);
 	}
 
 	@Override
 	public void removeTrade(MSymbol symbol) {
 		trades.remove(symbol);
+
+		/* logging */
+		logger.trace(">>> Removed, if it existed, from portfolio the trade: " + symbol);
 	}
 	
 	@Override
@@ -180,7 +206,6 @@ final class PortfolioImpl implements Portfolio {
 
 	@Override
 	public Trade createTrade(String symbol) {
-		getParentStrategy().getFramework().debug(">>> Creating trade for " + symbol + "...");
 		if (trades.containsKey(symbol) ) return trades.get(symbol);
 		
 		Trade trade =

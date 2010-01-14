@@ -1,5 +1,6 @@
 package org.kohera.metctools.portfolio;
 
+import org.apache.log4j.Logger;
 import org.kohera.metctools.DelegatorStrategy;
 import org.kohera.metctools.Messages;
 import org.kohera.metctools.delegate.ExecutionReportDelegate;
@@ -33,6 +34,9 @@ import org.marketcetera.trade.MSymbol;
  */
 public abstract class PortfolioStrategy extends DelegatorStrategy {
 
+	/* logging */
+	private final static Logger logger = Logger.getLogger(PortfolioStrategy.class);
+	
 	/**
 	 * Internal class that routes execution reports to the appropriate
 	 * trades in the portfolio.
@@ -50,7 +54,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 					.acceptExecutionReport(PortfolioStrategy.this, report);
 			} else {
 				// TODO: clean up
-				warn("Received external execution report. (Ignoring.) -- " + report );
+				logger.warn("Received external execution report. (Ignoring.) -- " + report );
 			}
 		}
 
@@ -62,7 +66,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 					.acceptTrade(tradeEvent);
 			} else {
 				// TODO: clean up
-				warn("Received external trade event. (Ignoring.)");
+				logger.warn("Received external trade event. (Ignoring.)");
 			}
 		}
 		
@@ -85,7 +89,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		portfolio = new PortfolioImpl(this);
 		dataRequestId = null;
 		
-		/* route execution reports and trades to the portfolio */
+		/* route execution reports and trades (ticks) to the portfolio */
 		addDelegate( new TradeRouter() );
 	}
 
@@ -123,18 +127,18 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		
 		String[] symbols = portfolio.getSymbols();
 		if ( symbols.length < 1 ) {
-			warn(">>> Skipping market data (no symbols in portfolio).");
+			logger.warn(">>> Skipping market data (no symbols in portfolio).");
 			return;
 		}
 		
-		info(">>> Starting market data...");
+		logger.info(">>> Starting market data...");
 		MarketDataRequest request = MarketDataRequest
 										.newRequest()
 										.withSymbols(symbols)
 										.fromProvider(dataProvider)
 										.withContent("LATEST_TICK");
 		dataRequestId = requestMarketData(request);
-		getFramework().info(">>> Market data id: " + dataRequestId );
+		logger.info(">>> Market data id: " + dataRequestId );
 	}
 
 	public void stopMarketData() {
