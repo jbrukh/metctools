@@ -64,7 +64,7 @@ public final class Trade {
 	private void init() {
 		quantity = leavesQty = cumulativeQty = BigDecimal.ZERO;
 		averagePrice = BigDecimal.ZERO;
-		pendingOrderId = null;
+		pendingOrderId = cancelOrderId = null;
 		lastTrade = null;
 		side = pendingSide = Side.NONE;
 		
