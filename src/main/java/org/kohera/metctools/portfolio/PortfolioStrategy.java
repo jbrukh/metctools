@@ -49,14 +49,14 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		public void onExecutionReport(DelegatorStrategy sender,
 				ExecutionReport report) {
 			String symbol = report.getSymbol().toString();
-			logger.trace(">>> Received report for symbol '"+symbol+"' ");
-			
+			logger.trace(">>> Received report for symbol '"+symbol+"':");
 			if ( portfolio.hasTrade(symbol) ) {
 				portfolio.getTrade(symbol)
 					.acceptExecutionReport(PortfolioStrategy.this, report);
 			} else {
 				// TODO: clean up
-				logger.warn("Received external execution report. (Ignoring.) -- " + report );
+				logger.warn(">>> Received external execution report. (Ignoring.)");
+				logger.trace(">>> Report: " + report );
 			}
 		}
 
@@ -69,7 +69,8 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 					.acceptTrade(tradeEvent);
 			} else {
 				// TODO: clean up
-				logger.warn("Received external trade event. (Ignoring.)");
+				logger.warn(">>> Received external trade event. (Ignoring.)");
+				logger.trace(">>> ...for symbol " + symbol + ".");
 			}
 		}
 		

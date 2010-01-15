@@ -12,6 +12,7 @@ import org.marketcetera.event.TradeEvent;
 import org.marketcetera.trade.BrokerID;
 import org.marketcetera.trade.ExecutionReport;
 import org.marketcetera.trade.MSymbol;
+import org.marketcetera.trade.OrderCancel;
 import org.marketcetera.trade.OrderID;
 import org.marketcetera.trade.OrderSingle;
 import org.marketcetera.trade.OrderStatus;
@@ -76,12 +77,18 @@ public final class Trade {
 		orderProcessor = new OrderProcessor();	
 	}
 	
+	private void clearPendingFields() {
+		leavesQty = cumulativeQty = BigDecimal.ZERO;
+		pendingSide = Side.NONE;		
+		pendingOrderId = null;
+	}
+	
 	/**
-	 * Returns the cost basis (average price of position).
+	 * Returns the average price of the last fill.
 	 * 
 	 * @return
 	 */
-	public BigDecimal getCostBasis() {
+	public BigDecimal getAveragePrice() {
 		return averagePrice;
 	}
 
@@ -291,36 +298,78 @@ public final class Trade {
 	public final void acceptExecutionReport(DelegatorStrategy sender,
 			ExecutionReport report) {
 		
-		/* check the correct symbol */
-		if ( !symbol.equals(report.getSymbol().toString())) {
+		/* check the correct symbol and account */
+		if ( !symbol.equals(report.getSymbol().toString()) || 
+				!report.getAccount().equals(parentPortfolio.getAccount()) ) {
 			logger.warn( ">>> " +
-					symbol + ": received external execution report (ignoring).");
-			logger.debug(">>> Incorrect symbol (not " + symbol + "): " + report);
+					this + ": received external execution report (ignoring).");
+			logger.debug(">>> " + symbol + "/" + report.getAccount());
 			return;
 		}
 		
-		/* check the correct order id */
-		if ( !pendingOrderId.equals(report.getOrderID())) {
-			logger.warn( ">>> " +
-					symbol + ": received external execution report (accepting).");
-			logger.debug("Not pending: " + report);
+		/* 
+		 * HANDLING OF EXTERNAL EXECUTION REPORTS
+		 * 
+		 * At this point, a report may have come from an order
+		 * placed within the framework (the pendingOrderId field
+		 * matches) or from some other external order placement
+		 * procedure through the ORS;
+		 * 
+		 * The policy for handling external reports will be implemented
+		 * in checkExternalReport().
+		 * 
+		 * IGNORING EXTERNAL REPORTS -- The advantages are that the
+		 * strategy cannot be confounded by various irregularities
+		 * that will inevitably occur if the user starts messing around
+		 * manually.  The disadvantages are that ignoring reports
+		 * may create inconsistencies: the user may set the real account
+		 * position to zero, while the strategy still views the position
+		 * as nonzero; as a result, the strategy may reopen positions
+		 * due to automatic orders placed based on strategy logic.
+		 * 
+		 * INCORPORATING EXTERNAL REPORTS -- This would keep the positions
+		 * tracked by the framework in sync with "real" positions as
+		 * defined by all received reports.  However, this can also be
+		 * problematic if strategy logic places orders based on position
+		 * size, since the sizes would be artificially modified.  Furthermore,
+		 * proper simultaneously handling reports from multiple asynchronous
+		 * sources would require a queue which is currently not implemented.
+		 * 
+		 */
+		if ( !processExternalReport(report)  ) {
+			/* ignore the report if the check fails */
+			logger.warn(">>> " + this + 
+					": External execution report for " + 
+					symbol + 
+					" (Ignoring.) -- " +
+					report);
+			return;
 		}
-		
 		orderStatus = report.getOrderStatus();
 		
+		/* check the status */
 		if ( orderStatus==OrderStatus.New ) {
+			/* scrape the report, and log */
 			processNew(report);
 		}
 		else if ( orderStatus==OrderStatus.PendingNew ) {
-			// nothing
+			/* do nothing */
 		}
 		else if ( orderStatus == OrderStatus.PartiallyFilled ) {
+			/* scrape the report, set the side from report, and log */
 			processPartialFill(report);
 		}
 		else if ( orderStatus == OrderStatus.Filled ) {
+			/* various actions depend on a fill */
 			processFill(report);
 		}
+		else if ( orderStatus == OrderStatus.PendingCancel ) {
+			/* do nothing */
+		}
 		else if ( orderStatus == OrderStatus.Canceled ) {
+			/* clear the pending fields info,
+			 * and make sure to scrape.
+			 */
 			processCanceled(report);
 		}
 		else if ( orderStatus == OrderStatus.Rejected ) {
@@ -328,9 +377,38 @@ public final class Trade {
 		}
 		else {
 			// TODO: implement this
-			logger.error("Execution report status is "+orderStatus+", which is not implemented.");
-		}
+			logger.error(">>> Execution report status is "+orderStatus+", which is not implemented.");
+		}	
+	}
+	
+	/**
+	 * This method implements the policy for handling execution reports
+	 * that come in externally through the Metc API and not via the MetcTools
+	 * framework (i.e. through the Trade OrderProcessor).
+	 * 
+	 * Currently, this method incorporates external execution reports.
+	 * 
+	 * @return
+	 */
+	private boolean processExternalReport(ExecutionReport report) {
 		
+		/* external report while nothing is pending;
+		 * if an order was placed internally, it would be pending
+		 */
+		OrderID id = report.getOrderID();
+		if ( !isPending() ) {
+			/* incorporate this report */
+			pendingOrderId = id;
+		} else if (
+					!(id.equals(pendingOrderId) || id.equals(cancelOrderId))
+				) {
+			throw new RuntimeException(
+					">>> " + this + ": Execution reports came in " +
+							"while another order is pending.  Queueing " +
+							"of separate execution reports is not supported." +
+							"The reports have been ignored." );	
+		}
+		return true;
 	}
 	
 	private void processNew( ExecutionReport report ) {
@@ -370,11 +448,26 @@ public final class Trade {
 
 		scrapeReport(report);
 		
+		updateQuantity(report);
+
+		/* kill the timeout thread, as the order has been filled */
+		orderProcessor.killTimeoutThread();
+		
+		/* clean up */
+		OrderID orderID = pendingOrderId;
+		clearPendingFields();  // watch out, this clears order cancels too
+		
+		/* order has been filled -- execute fill policy*/
+		fillPolicy.onFill(parentPortfolio.getParentStrategy(), 
+				            orderID, this);		
+	}
+	
+	private void updateQuantity( ExecutionReport fillReport ) {
 		/* 1 = position and fills are the same side; 
 		 * -1 = position and fills are different side;
 		 * recall that all quantities are unsigned */
 		BigDecimal polarity = side.toBigDecimal().multiply(
-				Side.fromMetcSide(report.getSide()).toBigDecimal());
+				pendingSide.toBigDecimal());
 		quantity = quantity.add(cumulativeQty.multiply(polarity));
 		
 		/* check if we have switched sides */
@@ -384,19 +477,6 @@ public final class Trade {
 			quantity = quantity.multiply(inv);
 			logger.info(">>> " + this + ": Position has switched sides!");
 		}
-
-		/* kill the timeout thread, as the order has been filled */
-		orderProcessor.killTimeoutThread();
-		
-		/* clean up */
-		leavesQty = cumulativeQty = BigDecimal.ZERO;
-		pendingSide = Side.NONE;		
-		OrderID orderID = pendingOrderId;
-		pendingOrderId = null;
-		
-		/* order has been filled -- execute fill policy*/
-		fillPolicy.onFill(parentPortfolio.getParentStrategy(), 
-				            orderID, this);		
 	}
 	
 	/**
@@ -405,6 +485,21 @@ public final class Trade {
 	 */
 	private void processCanceled( ExecutionReport report ) {
 		
+		/* get the report info */
+		scrapeReport(report);
+		
+		/* timeout */
+		orderProcessor.killTimeoutThread();
+		
+		/* logging */
+		logger.info(">>> " + this + ": Order " + report.getOriginalOrderID() + " has been canceled." );
+		
+		/* update the quantity */
+		updateQuantity(report);
+		
+		/* clean up */
+		clearPendingFields();
+		cancelOrderId = null;
 	}
 	
 	private void processRejected( ExecutionReport report ) {
@@ -495,25 +590,23 @@ public final class Trade {
 		}
 		
 		private void sendOrder( OrderSingle order, final long timeout, final OrderTimeoutPolicy policy ) {
-			
-			// TODO: may not be wise to have so many checks in this method
-			
+	
 			/* check the parent portfolio */
 			if (parentPortfolio==null) {
-				throw new RuntimeException("Trade "+Trade.this+" doesn't have a parent portfolio.");
+				throw new RuntimeException(">>> "+Trade.this+": doesn't have a parent portfolio.");
 			}
 			
 			/* get the parent strategy */
 			final PortfolioStrategy parentStrategy = 
 				parentPortfolio.getParentStrategy();
-			if ( parentStrategy==null) {
-				throw new RuntimeException("Trade "+Trade.this+" doesn't have a parent strategy.");
+			if (parentStrategy==null) {
+				throw new RuntimeException(">>> "+Trade.this+": doesn't have a parent strategy.");
 			}
 			
 			/* check pending order */
 			if ( isPending() ) {
 				logger.error( ">>> " +
-						this + ": Cannot send an order while order " + pendingOrderId + " is pending.");
+						Trade.this + ": Cannot send an order while order " + pendingOrderId + " is pending.");
 				return;
 			}
 			
@@ -538,6 +631,19 @@ public final class Trade {
 		public void killTimeoutThread() {
 			if ( orderTimeoutThr!=null ) {
 				timer.kill(orderTimeoutThr);
+			}
+		}
+		
+		public void cancelOrder() {
+			if ( isPending() ) {
+				logger.info(">>> " + Trade.this + ": Canceling order " + pendingOrderId);
+				OrderCancel cancel = parentPortfolio.getParentStrategy()
+				  .getFramework().cancelOrder(
+						  pendingOrderId, 
+						  true);
+				cancelOrderId = cancel.getOrderID();
+			} else {
+				logger.warn(">>> " + Trade.this + ": Nothing to cancel (no orders pending).");
 			}
 		}
 		

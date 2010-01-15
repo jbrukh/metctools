@@ -33,7 +33,7 @@ public final class OrderTimeoutPolicies {
 		public void onOrderTimeout(DelegatorStrategy sender, OrderID orderId, long timeout, Trade trade) {
 			Logger.getLogger(PortfolioStrategy.class)
 			  .warn(">>> Could not fill order in " + timeout + " ms. (Canceling)");
-			sender.getFramework().cancelOrder(orderId,true);
+			trade.order().cancelOrder();
 		}		
 	};
 
