@@ -1,5 +1,7 @@
 package org.kohera.metctools.portfolio;
 
+import java.io.Serializable;
+
 import org.kohera.metctools.DelegatorStrategy;
 import org.marketcetera.trade.OrderID;
 
@@ -9,7 +11,7 @@ import org.marketcetera.trade.OrderID;
  * @author Jake Brukhman
  *
  */
-public interface OrderTimeoutPolicy {
+public interface OrderTimeoutPolicy extends Serializable {
 	
 	/**
 	 * Override this method to implement an order timeout policy.

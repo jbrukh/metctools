@@ -19,8 +19,8 @@ final class PortfolioImpl implements Portfolio {
 	private static final long serialVersionUID = -7913728982753589441L;
 	
 	/* trades */
+	transient private PortfolioStrategy	parentStrategy;
 	private Map<String,Trade>	trades;
-	private PortfolioStrategy	parentStrategy;
 	private BrokerID			brokerId;
 	private String				account;
 	
@@ -110,7 +110,7 @@ final class PortfolioImpl implements Portfolio {
 
 	@Override
 	public Trade getTrade(String symbol) {
-		return trades.get(symbol);
+		return createTrade(symbol);
 	}
 	
 	@Override
@@ -242,7 +242,22 @@ final class PortfolioImpl implements Portfolio {
 		addTrade(trade);
 		return trade;
 	}
+	
+	@Override
+	public String toString() {
+		StringBuilder str = new StringBuilder();
+		str.append("\n--- START PORTFOLIO ---\n");
+		for ( Trade t : trades.values() ) {
+			str.append(t.toString());
+			str.append('\n');
+		}
+		str.append("--- END PORTFOLIO -----\n");
+		return str.toString();
+	}
 
-
+	@Override
+	public void setParentStrategy(PortfolioStrategy parent) {
+		parentStrategy = parent;
+	}
 
 }

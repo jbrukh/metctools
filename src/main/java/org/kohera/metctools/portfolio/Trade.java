@@ -1,5 +1,6 @@
 package org.kohera.metctools.portfolio;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 import org.apache.log4j.Logger;
@@ -11,18 +12,22 @@ import org.kohera.metctools.DelegatorStrategy;
 import org.marketcetera.event.TradeEvent;
 import org.marketcetera.trade.BrokerID;
 import org.marketcetera.trade.ExecutionReport;
-import org.marketcetera.trade.MSymbol;
 import org.marketcetera.trade.OrderCancel;
 import org.marketcetera.trade.OrderID;
 import org.marketcetera.trade.OrderSingle;
 import org.marketcetera.trade.OrderStatus;
 
-public final class Trade {
+public class Trade implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8466519547231754210L;
+	
 	/* internal fields  */
-	transient private final 
-		Portfolio 			parentPortfolio;		// parent strategy
-	private  
+	transient private 
+		Portfolio 			parentPortfolio;	// parent portfolio to whom this trade belongs
+	transient private
 		OrderProcessor 		orderProcessor;		// order processing object
 
 	/* accounting */
@@ -623,6 +628,23 @@ public final class Trade {
 	}
 	
 	/**
+	 * Forcefully reset the order processor. This method is
+	 * used to recover from serialization.
+	 * 
+	 * (Be sure you know what you are doing.)
+	 */
+	public void resetOrderProcessor() {
+		if ( orderProcessor != null ) {
+			orderProcessor.killTimer();
+		}
+		orderProcessor = new OrderProcessor();
+	}
+	
+	public void setParentPortfolio(Portfolio portfolio) {
+		parentPortfolio = portfolio;
+	}
+	
+	/**
 	 * 
 	 * Order Processor.
 	 * 
@@ -686,6 +708,10 @@ public final class Trade {
 			if ( orderTimeoutThr!=null ) {
 				timer.kill(orderTimeoutThr);
 			}
+		}
+		
+		public void killTimer() {
+			timer.killAll();
 		}
 		
 		public void cancelOrder() {

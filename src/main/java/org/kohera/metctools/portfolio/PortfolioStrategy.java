@@ -1,5 +1,10 @@
 package org.kohera.metctools.portfolio;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Date;
@@ -59,28 +64,28 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		public void onExecutionReport(DelegatorStrategy sender,
 				ExecutionReport report) {
 			String symbol = report.getSymbol().toString();
-			logger.trace(">>>\tReceived report for symbol '"+symbol+"':");
+			logger.trace(">>> Received report for symbol '"+symbol+"':");
 			if ( portfolio.hasTrade(symbol) ) {
 				portfolio.getTrade(symbol)
 					.acceptExecutionReport(PortfolioStrategy.this, report);
 			} else {
 				// TODO: clean up
-				logger.warn(">>>\tReceived external execution report. (Ignoring.)");
-				logger.trace(">>>\tReport: " + report );
+				logger.warn(">>> Received external execution report. (Ignoring.)");
+				logger.trace(">>> Report: " + report );
 			}
 		}
 
 		@Override
 		public void onTrade(DelegatorStrategy sender, TradeEvent tradeEvent) {
 			String symbol = tradeEvent.getSymbol().toString();
-			//logger.trace(">>>\tReceived trade for symbol '"+symbol+"'");
+			//logger.trace(">>> Received trade for symbol '"+symbol+"'");
 			if ( portfolio.hasTrade(symbol) ) {
 				portfolio.getTrade(symbol)
 					.acceptTrade(tradeEvent);
 			} else {
 				// TODO: clean up
-				logger.warn(">>>\tReceived external trade event. (Ignoring.)");
-				logger.trace(">>>\t...for symbol " + symbol + ".");
+				logger.warn(">>> Received external trade event. (Ignoring.)");
+				logger.trace(">>> ...for symbol " + symbol + ".");
 			}
 		}
 		
@@ -143,18 +148,18 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		String[] symbols = (String[])s.toArray(new String[s.size()]);
 		
 		if ( symbols.length < 1 ) {
-			logger.warn(">>>\tSkipping market data (no symbols in portfolio).");
+			logger.warn(">>> Skipping market data (no symbols in portfolio).");
 			return;
 		}
 		
-		logger.info(">>>\tStarting market data...");
+		logger.info(">>> Starting market data...");
 		MarketDataRequest request = MarketDataRequest
 										.newRequest()
 										.withSymbols(symbols)
 										.fromProvider(dataProvider)
 										.withContent("LATEST_TICK");
 		dataRequestId = requestMarketData(request);
-		logger.info(">>>\tMarket data id: " + dataRequestId );
+		logger.info(">>> Market data id: " + dataRequestId );
 	}
 
 	public void stopMarketData() {
@@ -174,6 +179,33 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 	 */
 	public void serializePortfolio( String file ) {
 		
+		/* check that portfolio exists */
+		if ( portfolio==null ) {
+			logger.error(">>> Cannot serialize portfolio because it is undefined.");
+			return;
+		}
+		
+		/* output objects */
+		FileOutputStream fos = null;
+		ObjectOutputStream out = null;
+		
+		try {
+			fos = new FileOutputStream(file);
+			out = new ObjectOutputStream(fos);
+			out.writeObject(portfolio);
+		} catch (IOException e ) {
+			logger.error(">>> Could not serialize portfolio. (" + e.getMessage() + ")");
+			return;
+		} finally {
+			try {
+				out.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		logger.info(">>> Serialized portfolio to " + file);
+		logger.debug(portfolio.toString());
 	}
 
 	/**
@@ -188,6 +220,57 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 	 */
 	public void deserializePortfolio( String file ) {
 		
+		/* make sure the portfolio is empty or has no open positions */
+		if ( portfolio.size() != 0 || 
+				portfolio.getTotalPosition() != BigDecimal.ZERO ) {
+			logger.error(">>> Cannot load portfolio from file because " +
+					"the active portfolio is non-empty.");
+			return;
+		}
+		
+		/* input objects */
+		FileInputStream fin = null;
+		ObjectInputStream in = null;
+		
+		try {
+			fin = new FileInputStream(file);
+			in = new ObjectInputStream(fin);
+			
+			/* get the object */
+			portfolio = (PortfolioImpl)in.readObject();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+			logger.error(">>> Serialization error. (" + e.getMessage() + ").");
+			return;
+		} catch (IOException e ) {
+			logger.error(">>> Could not serialize portfolio. (" + e.getMessage() + ")");
+			return;
+		} finally {
+			try {
+				in.close();
+			} catch (IOException e) { e.printStackTrace(); }
+		}
+		
+		/* 
+		 * rewire the portfolio 
+		 */
+		
+		/* set the parent strategy */
+		portfolio.setParentStrategy(this);
+		/* reset the OrderProcessors for each trade
+		 * (i.e. all memory of pending trades and timeouts
+		 * is reset)
+		 */
+		portfolio.forEach( new Action<Trade>() {
+			@Override
+			public void performAction(Trade trade) {
+				trade.setParentPortfolio(portfolio);
+				trade.resetOrderProcessor();
+			}
+		});
+		
+		logger.info(">>> Deserialized portfolio from " + file + ".");
+		logger.debug(portfolio.toString());
 	}
 
 	/**
@@ -207,6 +290,11 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 	 * 2. On the other hand, if the portfolio contains a position that
 	 * does not exist in the ORS, this position is removed from the
 	 * portfolio.
+	 * 
+	 * NOTE: It is better to sync positions prior to using the method
+	 * startMarketData().  Trades that are removed from the portfolio
+	 * as a result of the call to syncORSPositions() will still receive
+	 * market data until the data feed is restarted.
 	 */
 	public void syncORSPositions() {
 		Map<PositionKey,BigDecimal> positions =
@@ -214,7 +302,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		
 		/* maybe not connected...? */
 		if ( positions == null ) {
-			logger.error(">>>\tCould not sync ORS positions.");
+			logger.error(">>> Could not sync ORS positions.");
 			return;
 		}
 	
@@ -234,22 +322,14 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 				
 					trade.overrideQuantity(qty);
 					trade.overrideSide(side);
+					
+					logger.debug(">>> Syncing " + symbol + " to position " + pos + "." );	
 				}
 			}
 		}
 		
 		portfolio.getSymbols().retainAll(symbols);
 		
-		/* restart the data feed, if it is on */
-		if (dataRequestId!=null) {
-			stopMarketData();
-			/* wait 1 seconds for everything to turn off */
-			try {
-				Thread.sleep(5000);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			startMarketData();
-		}
 	}
+	
 }

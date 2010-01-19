@@ -5,7 +5,6 @@ import java.math.BigDecimal;
 import java.util.Collection;
 
 import org.marketcetera.trade.BrokerID;
-import org.marketcetera.trade.MSymbol;
 
 public interface Portfolio extends Serializable {
 
@@ -161,7 +160,19 @@ public interface Portfolio extends Serializable {
 
 	public String getAccount();
 
+	/**
+	 * Returns the parent PortfolioStrategy to whom this portfolio belongs.
+	 * 
+	 * @return
+	 */
 	public PortfolioStrategy getParentStrategy();
+	
+	/**
+	 * Sets the parent PortfolioStrategy to whom this portfolio belongs.
+	 * 
+	 * @param parent
+	 */
+	public void setParentStrategy(PortfolioStrategy parent);
 	
 	public Trade createTrade(String symbol);
 

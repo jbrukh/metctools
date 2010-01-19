@@ -1,5 +1,6 @@
 package org.kohera.metctools.util;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.List;
  * @author Jake Brukhman
  *
  */
-public class Timer {
+public class Timer implements Serializable {
 	
 	/* fields */
 	public List<TaskThread> threads;
