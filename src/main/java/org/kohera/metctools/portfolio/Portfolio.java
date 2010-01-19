@@ -1,12 +1,13 @@
 package org.kohera.metctools.portfolio;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Collection;
 
 import org.marketcetera.trade.BrokerID;
 import org.marketcetera.trade.MSymbol;
 
-public interface Portfolio {
+public interface Portfolio extends Serializable {
 
 	/**
 	 * Add a trade to this portfolio.
@@ -20,13 +21,22 @@ public interface Portfolio {
 	/**
 	 * Remove a trade from this portfolio by the Trade object.
 	 * 
+	 * Note that you must liquidate and zero the position before removal is
+	 * allowed.
+	 * 
+	 * @throws RuntimeException
 	 * @param trade
 	 */
 	public void removeTrade( Trade trade );
 	
 	/**
-	 * Remove a trade from this portfolio by symbol.
+	 * Remove a trade from this portfolio by symbol.  Finds the
+	 * associated Trade object and attempts to remove it.
 	 * 
+	 * Note that you must liquidate and zero the position before removal is
+	 * allowed.
+	 * 
+	 * @throws RuntimeException
 	 * @param symbol
 	 */
 	public void removeTrade( String symbol );
@@ -61,7 +71,7 @@ public interface Portfolio {
 	 * 
 	 * @return
 	 */
-	public String[] getSymbols();
+	public Collection<String> getSymbols();
 	
 	/**
 	 * Performs an Action for each trade in the portfolio.
@@ -154,5 +164,13 @@ public interface Portfolio {
 	public PortfolioStrategy getParentStrategy();
 	
 	public Trade createTrade(String symbol);
+
+	/**
+	 * Removes a trade from portfolio, no questions asked.
+	 * 
+	 * @param trade
+	 */
+	public void forcefullyRemoveTrade(Trade trade);
+	
 
 }

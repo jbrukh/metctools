@@ -20,7 +20,7 @@ public final class OrderTimeoutPolicies {
 	public final static OrderTimeoutPolicy ON_TIMEOUT_WARN = new OrderTimeoutPolicy() {
 		public void onOrderTimeout(DelegatorStrategy sender, OrderID orderId, long timeout, Trade trade) {
 			Logger.getLogger(PortfolioStrategy.class)
-			  .warn(">>> Could not fill order in " + timeout + " ms. (Ignoring)");
+			  .warn(">>>\tCould not fill order in " + timeout + " ms. (Ignoring)");
 		}		
 	};
 	
@@ -32,7 +32,7 @@ public final class OrderTimeoutPolicies {
 	public final static OrderTimeoutPolicy ON_TIMEOUT_CANCEL = new OrderTimeoutPolicy() {
 		public void onOrderTimeout(DelegatorStrategy sender, OrderID orderId, long timeout, Trade trade) {
 			Logger.getLogger(PortfolioStrategy.class)
-			  .warn(">>> Could not fill order in " + timeout + " ms. (Canceling)");
+			  .warn(">>>\tCould not fill order in " + timeout + " ms. (Canceling)");
 			trade.order().cancelOrder();
 		}		
 	};

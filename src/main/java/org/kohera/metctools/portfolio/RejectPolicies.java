@@ -16,7 +16,7 @@ public class RejectPolicies {
 		public void onReject(DelegatorStrategy sender, OrderID orderId,
 				Trade trade, ExecutionReport report) {
 			Logger.getLogger(PortfolioStrategy.class)
-			  .info(">>> " + trade + ": REJECTED (" + report.getText() + ") Order " + orderId + ".");
+			  .info(">>>\t" + trade + ": REJECTED (" + report.getText() + ") Order " + orderId + ".");
 		}		
 	};
 

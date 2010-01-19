@@ -13,6 +13,11 @@ import com.sun.net.ssl.internal.ssl.Debug;
 
 final class PortfolioImpl implements Portfolio {
 
+	/**
+	 *  For serialization. 
+	 */
+	private static final long serialVersionUID = -7913728982753589441L;
+	
 	/* trades */
 	private Map<String,Trade>	trades;
 	private PortfolioStrategy	parentStrategy;
@@ -66,7 +71,7 @@ final class PortfolioImpl implements Portfolio {
 	public void addTrade(Trade trade) {
 		
 		if ( trades.containsKey(trade.getSymbol())) {
-			logger.error(">>> Trade for symbol " + 
+			logger.error(">>>\tTrade for symbol " + 
 					trade.getSymbol() + " already exists.");
 			return;
 		}
@@ -93,7 +98,7 @@ final class PortfolioImpl implements Portfolio {
 		trades.put(trade.getSymbol().toString(),trade);
 		
 		/* logging */
-		logger.trace(">>> Added trade to portfolio: " + trade);
+		logger.trace(">>>\tAdded trade to portfolio: " + trade);
 	}
 
 	@Override
@@ -120,18 +125,29 @@ final class PortfolioImpl implements Portfolio {
 
 	@Override
 	public void removeTrade(Trade trade) {
-		trades.remove(trade.getSymbol());
 		
+		/* make sure that the position is zeroed */
+		if ( trade.getNetQuantity().compareTo(BigDecimal.ZERO) != 0 ) {
+			throw new RuntimeException(">>>\tCannot remove a trade that has a non-zero position.  First, liquidate this trade.");
+		}
+		forcefullyRemoveTrade(trade);
+	}
+	
+	@Override
+	public void forcefullyRemoveTrade(Trade trade) {
+		trades.remove(trade.getSymbol());
 		/* logging */
-		logger.trace(">>> Removed, if it existed, from portfolio the trade: " + trade);
+		logger.trace(">>>\tRemoved, if it existed, from portfolio the trade: " + trade);
 	}
 
 	@Override
 	public void removeTrade(String symbol) {
-		trades.remove(symbol);
-
-		/* logging */
-		logger.trace(">>> Removed, if it existed, from portfolio the trade: " + symbol);
+		Trade trade = trades.get(symbol);
+		if ( trade!=null ) {
+			removeTrade(trade);
+		} else {
+			logger.error(">>>\tNo trade exists for symbol " + symbol + " (not removed).");
+		}
 	}
 	
 	@Override
@@ -208,17 +224,8 @@ final class PortfolioImpl implements Portfolio {
 	}
 
 	@Override
-	public String[] getSymbols() {
-		int size = trades.size();
-		if ( size < 1 ) return null;
-		
-		String[] symbols = new String[trades.size()];
-		int i = 0;
-		for ( String symbol : trades.keySet() ) {
-			symbols[i] = symbol.toString();
-			i++;
-		}
-		return symbols;
+	public Collection<String> getSymbols() {
+		return trades.keySet();
 	}
 
 	@Override

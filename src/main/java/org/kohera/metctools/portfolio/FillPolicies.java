@@ -21,7 +21,7 @@ public class FillPolicies {
 		public void onFill(DelegatorStrategy sender, OrderID orderId,
 				Trade trade) {
 			Logger.getLogger(PortfolioStrategy.class)
-			  .info(">>> " + trade + ": Filled order " + orderId + ".");
+			  .info(">>>\t" + trade + ": Filled order " + orderId + ".");
 		}		
 	};
 }

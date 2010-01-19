@@ -46,6 +46,12 @@ public enum Side {
 		return NONE;
 	}
 	
+	public static Side fromInt( Integer n ) {
+		if ( n==-1 ) return SELL;
+		if ( n==1 ) return BUY;
+		return NONE;
+	}
+	
 	/**
 	 * Convert to a Marketcetera Side object.
 	 * @return

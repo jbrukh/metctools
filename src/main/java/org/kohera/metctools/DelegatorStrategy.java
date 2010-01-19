@@ -3,6 +3,8 @@ package org.kohera.metctools;
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Map;
+
+import org.apache.log4j.Logger;
 import org.kohera.metctools.delegate.AskDelegate;
 import org.kohera.metctools.delegate.BidDelegate;
 import org.kohera.metctools.delegate.BrokerStatusDelegate;
@@ -67,7 +69,10 @@ public class DelegatorStrategy extends Strategy
 	/* status listeners*/
 	private final BrokerStatusListener BROKER_STATUS_LISTENER;
 	private final ServerStatusListener SERVER_STATUS_LISTENER;
-	/**/
+	
+	/* logging */
+	private final static Logger logger = 
+		Logger.getLogger(DelegatorStrategy.class);
 
 	
 	/**
@@ -253,7 +258,6 @@ public class DelegatorStrategy extends Strategy
 		try {
 			return client.getPositionsAsOf(date);
 		} catch (ConnectionException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;

@@ -238,6 +238,9 @@ public final class Trade {
 	 * @return
 	 */
 	public BigDecimal getNetQuantity() {
+		/* 1 = position and fills are the same side; 
+		 * -1 = position and fills are different side;
+		 * recall that all quantities are unsigned */
 		BigDecimal polarity = BigDecimal.valueOf(side.value()*pendingSide.value(),0);
 		return quantity.add( polarity.multiply(cumulativeQty));
 	}
@@ -301,9 +304,9 @@ public final class Trade {
 		/* check the correct symbol and account */
 		if ( !symbol.equals(report.getSymbol().toString()) || 
 				!report.getAccount().equals(parentPortfolio.getAccount()) ) {
-			logger.warn( ">>> " +
+			logger.warn( ">>>\t" +
 					this + ": received external execution report (ignoring).");
-			logger.debug(">>> " + symbol + "/" + report.getAccount());
+			logger.debug(">>>\t" + symbol + "/" + report.getAccount());
 			return;
 		}
 		
@@ -338,7 +341,7 @@ public final class Trade {
 		 */
 		if ( !processExternalReport(report)  ) {
 			/* ignore the report if the check fails */
-			logger.warn(">>> " + this + 
+			logger.warn(">>>\t" + this + 
 					": External execution report for " + 
 					symbol + 
 					" (Ignoring.) -- " +
@@ -347,38 +350,71 @@ public final class Trade {
 		}
 		orderStatus = report.getOrderStatus();
 		
-		/* check the status */
-		if ( orderStatus==OrderStatus.New ) {
+		switch(orderStatus) {
+		case New:
 			/* scrape the report, and log */
 			processNew(report);
-		}
-		else if ( orderStatus==OrderStatus.PendingNew ) {
-			/* do nothing */
-		}
-		else if ( orderStatus == OrderStatus.PartiallyFilled ) {
+			break;
+		case PartiallyFilled:
 			/* scrape the report, set the side from report, and log */
 			processPartialFill(report);
-		}
-		else if ( orderStatus == OrderStatus.Filled ) {
+			break;
+		case Filled:
 			/* various actions depend on a fill */
 			processFill(report);
-		}
-		else if ( orderStatus == OrderStatus.PendingCancel ) {
-			/* do nothing */
-		}
-		else if ( orderStatus == OrderStatus.Canceled ) {
+			break;
+		case Canceled:
 			/* clear the pending fields info,
 			 * and make sure to scrape.
 			 */
 			processCanceled(report);
-		}
-		else if ( orderStatus == OrderStatus.Rejected ) {
+			break;
+		case Rejected:
+			/* just calls the rejection policy */
 			processRejected(report);
+			break;
+		case PendingNew:
+		case PendingCancel:
+			break;
+		default:
+			logger.error(
+					">>>\tExecution report status is " +
+					orderStatus + ", which is not implemented.");
+			break;
 		}
-		else {
-			// TODO: implement this
-			logger.error(">>> Execution report status is "+orderStatus+", which is not implemented.");
-		}	
+		
+//		/* check the status */
+//		if ( orderStatus==OrderStatus.New ) {
+//			/* scrape the report, and log */
+//			processNew(report);
+//		}
+//		else if ( orderStatus==OrderStatus.PendingNew ) {
+//			/* do nothing */
+//		}
+//		else if ( orderStatus == OrderStatus.PartiallyFilled ) {
+//			/* scrape the report, set the side from report, and log */
+//			processPartialFill(report);
+//		}
+//		else if ( orderStatus == OrderStatus.Filled ) {
+//			/* various actions depend on a fill */
+//			processFill(report);
+//		}
+//		else if ( orderStatus == OrderStatus.PendingCancel ) {
+//			/* do nothing */
+//		}
+//		else if ( orderStatus == OrderStatus.Canceled ) {
+//			/* clear the pending fields info,
+//			 * and make sure to scrape.
+//			 */
+//			processCanceled(report);
+//		}
+//		else if ( orderStatus == OrderStatus.Rejected ) {
+//			processRejected(report);
+//		}
+//		else {
+//			// TODO: implement this
+//			logger.error(">>>\tExecution report status is "+orderStatus+", which is not implemented.");
+//		}	
 	}
 	
 	/**
@@ -403,7 +439,7 @@ public final class Trade {
 					!(id.equals(pendingOrderId) || id.equals(cancelOrderId))
 				) {
 			throw new RuntimeException(
-					">>> " + this + ": Execution reports came in " +
+					">>>\t" + this + ": Execution reports came in " +
 							"while another order is pending.  Queueing " +
 							"of separate execution reports is not supported." +
 							"The reports have been ignored." );	
@@ -416,7 +452,7 @@ public final class Trade {
 		scrapeReport(report);
 		
 		/* logging */
-		logger.trace(">>> " + report);
+		logger.trace(">>>\t" + report);
 	}
 	
 	/**
@@ -429,8 +465,8 @@ public final class Trade {
 		side = Side.fromMetcSide(report.getSide());
 		
 		/* logging */
-		logger.info(">>> " + this + ": Partial fill on " + pendingOrderId + ".");
-		logger.trace(">>> " + report);
+		logger.info(">>>\t" + this + ": Partial fill on " + pendingOrderId + ".");
+		logger.trace(">>>\t" + report);
 	}
 	
 	/**
@@ -447,7 +483,6 @@ public final class Trade {
 		}
 
 		scrapeReport(report);
-		
 		updateQuantity(report);
 
 		/* kill the timeout thread, as the order has been filled */
@@ -463,19 +498,15 @@ public final class Trade {
 	}
 	
 	private void updateQuantity( ExecutionReport fillReport ) {
-		/* 1 = position and fills are the same side; 
-		 * -1 = position and fills are different side;
-		 * recall that all quantities are unsigned */
-		BigDecimal polarity = side.toBigDecimal().multiply(
-				pendingSide.toBigDecimal());
-		quantity = quantity.add(cumulativeQty.multiply(polarity));
+		/* add the cumulativeQty to the quantity */
+		quantity = getNetQuantity(); 
 		
 		/* check if we have switched sides */
 		if ( quantity.compareTo(BigDecimal.ZERO)<0) {
 			side = side.opposite();
 			BigDecimal inv = BigDecimal.valueOf(-1L,0);
 			quantity = quantity.multiply(inv);
-			logger.info(">>> " + this + ": Position has switched sides!");
+			logger.info(">>>\t" + this + ": Position has switched sides!");
 		}
 	}
 	
@@ -492,7 +523,7 @@ public final class Trade {
 		orderProcessor.killTimeoutThread();
 		
 		/* logging */
-		logger.info(">>> " + this + ": Order " + report.getOriginalOrderID() + " has been canceled." );
+		logger.info(">>>\t" + this + ": Order " + report.getOriginalOrderID() + " has been canceled." );
 		
 		/* update the quantity */
 		updateQuantity(report);
@@ -567,12 +598,35 @@ public final class Trade {
 		orderTimeout = timeout;
 	}
 	
+	/**
+	 * Forcefully change the quantity of this trade; this method
+	 * is used to recover from certain accounting errors.
+	 * 
+	 * (Be sure you know what you are doing.)
+	 * 
+	 * @param qty
+	 */
+	public void overrideQuantity( BigDecimal quantity ) {
+		this.quantity = quantity;
+	}
+	
+	/**
+	 * Forcefully change the side of this trade; this method
+	 * is used to recover from certain accounting errors.
+	 * 
+	 * (Be sure you know what you are doing.)
+	 * 
+	 * @param side
+	 */
+	public void overrideSide( Side side ) {
+		this.side = side;
+	}
 	
 	/**
 	 * 
 	 * Order Processor.
 	 * 
-	 * 
+	 * A convenient encapsulation of outgoing order flow.
 	 * 
 	 */
 	public final class OrderProcessor {
@@ -593,19 +647,19 @@ public final class Trade {
 	
 			/* check the parent portfolio */
 			if (parentPortfolio==null) {
-				throw new RuntimeException(">>> "+Trade.this+": doesn't have a parent portfolio.");
+				throw new RuntimeException(">>>\t"+Trade.this+": doesn't have a parent portfolio.");
 			}
 			
 			/* get the parent strategy */
 			final PortfolioStrategy parentStrategy = 
 				parentPortfolio.getParentStrategy();
 			if (parentStrategy==null) {
-				throw new RuntimeException(">>> "+Trade.this+": doesn't have a parent strategy.");
+				throw new RuntimeException(">>>\t"+Trade.this+": doesn't have a parent strategy.");
 			}
 			
 			/* check pending order */
 			if ( isPending() ) {
-				logger.error( ">>> " +
+				logger.error( ">>>\t" +
 						Trade.this + ": Cannot send an order while order " + pendingOrderId + " is pending.");
 				return;
 			}
@@ -615,7 +669,7 @@ public final class Trade {
 			final OrderID id = order.getOrderID();
 			pendingOrderId = id;
 			parentStrategy.getFramework().send(order);
-			logger.info(">>> Sending order " + id + ".");
+			logger.info(">>>\tSending order " + id + ".");
 			
 			/* create timeout */
 			orderTimeoutThr = timer.fireIn(timeout, new Task() {
@@ -636,14 +690,14 @@ public final class Trade {
 		
 		public void cancelOrder() {
 			if ( isPending() ) {
-				logger.info(">>> " + Trade.this + ": Canceling order " + pendingOrderId);
+				logger.info(">>>\t" + Trade.this + ": Canceling order " + pendingOrderId);
 				OrderCancel cancel = parentPortfolio.getParentStrategy()
 				  .getFramework().cancelOrder(
 						  pendingOrderId, 
 						  true);
 				cancelOrderId = cancel.getOrderID();
 			} else {
-				logger.warn(">>> " + Trade.this + ": Nothing to cancel (no orders pending).");
+				logger.warn(">>>\t" + Trade.this + ": Nothing to cancel (no orders pending).");
 			}
 		}
 		
