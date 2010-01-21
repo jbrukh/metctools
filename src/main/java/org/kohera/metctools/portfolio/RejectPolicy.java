@@ -6,6 +6,13 @@ import org.kohera.metctools.DelegatorStrategy;
 import org.marketcetera.trade.ExecutionReport;
 import org.marketcetera.trade.OrderID;
 
+/**
+ * 
+ * Interface for custom policies for FIX message rejections.
+ * 
+ * @author Jake Brukhman
+ *
+ */
 public interface RejectPolicy 
 	extends Serializable {
 	
