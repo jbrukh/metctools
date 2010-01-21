@@ -67,6 +67,10 @@ public class Trade implements Serializable {
 		init();
 	}
 	
+	public Trade( String symbol ) {
+		this(symbol,null);
+	}
+	
 	private void init() {
 		quantity = leavesQty = cumulativeQty = BigDecimal.ZERO;
 		averagePrice = BigDecimal.ZERO;

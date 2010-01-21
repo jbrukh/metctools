@@ -71,11 +71,11 @@ final class PortfolioImpl implements Portfolio {
 	public void addTrade(Trade trade) {
 		
 		if ( trades.containsKey(trade.getSymbol())) {
-			logger.error(">>>\tTrade for symbol " + 
+			logger.error(">>> Trade for symbol " + 
 					trade.getSymbol() + " already exists.");
 			return;
 		}
-		
+
 		/* set the policies for the trades from the portfolio,
 		 * unless they are already customized
 		 */
@@ -95,10 +95,11 @@ final class PortfolioImpl implements Portfolio {
 			trade.setRejectPolicy(rejectPolicy);
 		}
 		
-		trades.put(trade.getSymbol().toString(),trade);
+		trade.setParentPortfolio(this);
+		trades.put(trade.getSymbol(),trade);
 		
 		/* logging */
-		logger.trace(">>>\tAdded trade to portfolio: " + trade);
+		logger.trace(">>> Added trade to portfolio: " + trade);
 	}
 
 	@Override
@@ -128,16 +129,17 @@ final class PortfolioImpl implements Portfolio {
 		
 		/* make sure that the position is zeroed */
 		if ( trade.getNetQuantity().compareTo(BigDecimal.ZERO) != 0 ) {
-			throw new RuntimeException(">>>\tCannot remove a trade that has a non-zero position.  First, liquidate this trade.");
+			throw new RuntimeException(">>> Cannot remove a trade that has a non-zero position.  First, liquidate this trade.");
 		}
 		forcefullyRemoveTrade(trade);
 	}
 	
 	@Override
 	public void forcefullyRemoveTrade(Trade trade) {
+		trade.setParentPortfolio(null);
 		trades.remove(trade.getSymbol());
 		/* logging */
-		logger.trace(">>>\tRemoved, if it existed, from portfolio the trade: " + trade);
+		logger.trace(">>> Removed, if it existed, from portfolio the trade: " + trade);
 	}
 
 	@Override
@@ -146,7 +148,7 @@ final class PortfolioImpl implements Portfolio {
 		if ( trade!=null ) {
 			removeTrade(trade);
 		} else {
-			logger.error(">>>\tNo trade exists for symbol " + symbol + " (not removed).");
+			logger.error(">>> No trade exists for symbol " + symbol + " (not removed).");
 		}
 	}
 	

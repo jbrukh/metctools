@@ -2,6 +2,7 @@ package org.kohera.metctools.portfolio;
 
 import org.apache.log4j.Logger;
 import org.kohera.metctools.DelegatorStrategy;
+import org.kohera.metctools.Messages;
 import org.marketcetera.trade.OrderID;
 
 
@@ -11,6 +12,7 @@ import org.marketcetera.trade.OrderID;
  * @author Jake Brukhman
  *
  */
+@SuppressWarnings("serial")
 public final class OrderTimeoutPolicies {
 	
 	/**
@@ -19,9 +21,16 @@ public final class OrderTimeoutPolicies {
 	 * 
 	 */
 	public final static OrderTimeoutPolicy ON_TIMEOUT_WARN = new OrderTimeoutPolicy() {
-		public void onOrderTimeout(DelegatorStrategy sender, OrderID orderId, long timeout, Trade trade) {
-			Logger.getLogger(PortfolioStrategy.class)
-			  .warn(">>>\tCould not fill order in " + timeout + " ms. (Ignoring)");
+		
+		@Override
+		public void onOrderTimeout(DelegatorStrategy sender, OrderID orderId, 
+				long timeout, Trade trade) {
+		
+			/* default message */
+			Logger.getLogger(PortfolioStrategy.class).warn(
+					Messages.MSG_ON_TIMEOUT_WARN(timeout)
+					);
+		
 		}		
 	};
 	
@@ -31,11 +40,20 @@ public final class OrderTimeoutPolicies {
 	 * 
 	 */
 	public final static OrderTimeoutPolicy ON_TIMEOUT_CANCEL = new OrderTimeoutPolicy() {
-		public void onOrderTimeout(DelegatorStrategy sender, OrderID orderId, long timeout, Trade trade) {
-			Logger.getLogger(PortfolioStrategy.class)
-			  .warn(">>>\tCould not fill order in " + timeout + " ms. (Canceling)");
+		
+		@Override
+		public void onOrderTimeout(DelegatorStrategy sender, OrderID orderId, 
+				long timeout, Trade trade) {
+			
+			/* log it... */
+			Logger.getLogger(PortfolioStrategy.class).warn(
+					Messages.MSG_ON_TIMEOUT_CANCEL(timeout)
+					);
+			
+			/* ...and cancel the order */
 			trade.order().cancelOrder();
 		}		
+	
 	};
 
 }
