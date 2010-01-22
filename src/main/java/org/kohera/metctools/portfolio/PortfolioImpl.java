@@ -63,6 +63,11 @@ final class PortfolioImpl implements Portfolio {
 	}
 	
 	@Override
+	public boolean isAccountInfoSet() {
+		return (brokerId!=null && account!=null);
+	}
+	
+	@Override
 	public PortfolioStrategy getParentStrategy() {
 		return parentStrategy;
 	}
@@ -136,7 +141,7 @@ final class PortfolioImpl implements Portfolio {
 	
 	@Override
 	public void forcefullyRemoveTrade(Trade trade) {
-		trade.setParentPortfolio(null);
+		trade.unsetParentPortfolio();
 		trades.remove(trade.getSymbol());
 		/* logging */
 		logger.trace(">>> Removed, if it existed, from portfolio the trade: " + trade);

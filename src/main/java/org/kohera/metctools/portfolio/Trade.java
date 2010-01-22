@@ -664,6 +664,17 @@ public class Trade implements Serializable {
 	
 	public void setParentPortfolio(Portfolio portfolio) {
 		parentPortfolio = portfolio;
+		
+		if ( orderProcessor == null ) {
+			orderProcessor = new OrderProcessor();
+		}
+		orderProcessor.setAccountInfo(portfolio.getBrokerID(), 
+				portfolio.getAccount());
+	}
+	
+	public void unsetParentPortfolio() {
+		parentPortfolio = null;
+		resetOrderProcessor();
 	}
 	
 	/**
@@ -681,9 +692,6 @@ public class Trade implements Serializable {
 
 		
 		public OrderProcessor() {
-			final BrokerID brokerId = getParentPortfolio().getBrokerID();
-			final String account = getParentPortfolio().getAccount();
-			orderBuilder = new OrderBuilder(brokerId,account);
 			timer = new Timer();
 		}
 		
@@ -691,7 +699,11 @@ public class Trade implements Serializable {
 	
 			/* check the parent portfolio */
 			if (parentPortfolio==null) {
-				throw new RuntimeException(">>>\t"+Trade.this+": doesn't have a parent portfolio.");
+				throw new RuntimeException(">>> "+Trade.this+": doesn't have a parent portfolio.");
+			}
+			
+			if (!isOrderBuilderSet() ) {
+				throw new RuntimeException(">>> "+Trade.this+": cannot send order because the account information is not set.");
 			}
 			
 			/* get the parent strategy */
@@ -726,6 +738,14 @@ public class Trade implements Serializable {
 			});
 		}
 		
+		public void setAccountInfo( BrokerID broker, String account ) {
+			orderBuilder = new OrderBuilder(broker,account);
+		}
+		
+		public boolean isOrderBuilderSet() {
+			return orderBuilder!=null;
+		}
+		
 		public void killTimeoutThread() {
 			if ( orderTimeoutThr!=null ) {
 				timer.kill(orderTimeoutThr);
@@ -758,6 +778,10 @@ public class Trade implements Serializable {
 		 * @param policy
 		 */
 		public void marketOrder( BigDecimal qty, Side side, long timeout, OrderTimeoutPolicy policy ) {
+			if ( !isOrderBuilderSet() ) {
+				throw new RuntimeException(
+						">>> "+Trade.this+": Cannot send order because account information is not set.");
+			}
 			OrderSingle order = orderBuilder
 									.makeMarket(symbol, qty, side.toMetcSide())
 									.getOrder();

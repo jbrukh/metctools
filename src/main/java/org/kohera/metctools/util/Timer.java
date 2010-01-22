@@ -89,7 +89,7 @@ public class Timer implements Serializable {
 	public TaskThread fireAt( final Date date, final Task task ) {
 		long now = new Date().getTime();
 		long then = date.getTime();
-		long delay = Math.min(then-now, 0);
+		long delay = Math.max(then-now, 0);
 		return fireIn(delay,task);
 	}
 	

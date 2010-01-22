@@ -265,7 +265,6 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 			@Override
 			public void performAction(Trade trade) {
 				trade.setParentPortfolio(portfolio);
-				trade.resetOrderProcessor();
 			}
 		});
 		

@@ -182,6 +182,14 @@ public interface Portfolio extends Serializable {
 	 * @param trade
 	 */
 	public void forcefullyRemoveTrade(Trade trade);
+
+	/**
+	 * Returns true if and only if the account information is set for this
+	 * portfolio.
+	 * 
+	 * @return
+	 */
+	public boolean isAccountInfoSet();
 	
 
 }
