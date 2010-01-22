@@ -78,4 +78,14 @@ public enum Side {
 	public Side opposite() {
 		return ((this==BUY)? SELL: (this==SELL? BUY : NONE));
 	}
+	
+	/**
+	 * Returns a number multiplied by the value of the side.
+	 * 
+	 * @param value
+	 * @return
+	 */
+	public BigDecimal polarize(BigDecimal value) {
+		return value.multiply(toBigDecimal());
+	}
 }

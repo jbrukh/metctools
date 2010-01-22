@@ -81,7 +81,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 			//logger.trace(">>> Received trade for symbol '"+symbol+"'");
 			if ( portfolio.hasTrade(symbol) ) {
 				portfolio.getTrade(symbol)
-					.acceptTrade(tradeEvent);
+					.acceptTradeEvent(tradeEvent);
 			} else {
 				// TODO: clean up
 				logger.warn(">>> Received external trade event. (Ignoring.)");

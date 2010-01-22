@@ -47,7 +47,7 @@ final class PortfolioImpl implements Portfolio {
 	}
 	
 	@Override
-	public void setAccountCredentials(BrokerID brokerId, String account) {
+	public void setAccountInfo(BrokerID brokerId, String account) {
 		this.brokerId = brokerId;
 		this.account = account;
 	}

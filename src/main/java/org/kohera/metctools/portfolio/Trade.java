@@ -17,6 +17,28 @@ import org.marketcetera.trade.OrderID;
 import org.marketcetera.trade.OrderSingle;
 import org.marketcetera.trade.OrderStatus;
 
+/**
+ * Implements the functionality of handling trade accounting and
+ * order processing for individual trades.
+ *
+ * NOTES
+ * 
+ * 1. A Trade is a high-level object that accounts for the activity
+ * in a particular symbol, and provides a convenient interface for
+ * sending orders and handling trade-specific events.
+ * 
+ * 2. Subclasses of Trade can override onTradeEvent() in order to make
+ * use of efficiently routed TradeEvents and react to them.  These events
+ * are efficiently-routed because the TradeEvent objects they carry are
+ * not broadcast to all TradeDelagates, but only to the relevant Trade
+ * objects within a PortfolioStrategy's Portfolio.  (This is done inside
+ * of PortfolioStrategy.TradeRouter.)
+ * 
+ * 3. (TODO) Implement bid and ask event processing.
+ * 
+ * @author Administrator
+ *
+ */
 public class Trade implements Serializable {
 
 	/**
@@ -167,6 +189,16 @@ public class Trade implements Serializable {
 	}
 	
 	/**
+	 * Returns true if and only if there is an open position in this
+	 * trade, or one is in the process of filling.
+	 * 
+	 * @return
+	 */
+	public final boolean isOpen() {
+		return quantity.intValue()!=0 || isFilling();
+	}
+	
+	/**
 	 * Returns the orderId of the pending order (or null).
 	 * 
 	 * @return
@@ -246,7 +278,7 @@ public class Trade implements Serializable {
 	 * 
 	 * @return
 	 */
-	public BigDecimal getNetQuantity() {
+	public final BigDecimal getNetQuantity() {
 		/* 1 = position and fills are the same side; 
 		 * -1 = position and fills are different side;
 		 * recall that all quantities are unsigned */
@@ -259,11 +291,11 @@ public class Trade implements Serializable {
 	 * 
 	 * @return
 	 */
-	public Portfolio getParentPortfolio() {
+	public final Portfolio getParentPortfolio() {
 		return parentPortfolio;
 	}
 	
-	public OrderStatus getOrderStatus() {
+	public final OrderStatus getOrderStatus() {
 		return orderStatus;
 	}
 
@@ -272,16 +304,34 @@ public class Trade implements Serializable {
 	 * 
 	 * @param tradeEvent
 	 */
-	public void acceptTrade(TradeEvent tradeEvent) {
+	public final void acceptTradeEvent(TradeEvent tradeEvent) {
 		lastTrade = tradeEvent;
+		
+		/* for subclass processing of efficiently-routed TradeEvents */
+		onTradeEvent(tradeEvent);
 	}
-
+	
+	/**
+	 * Provided so that subclasses can react to
+	 * efficiently-routed TradeEvents sent to this object via the 
+	 * PortfolioStrategy's TradeRouter.
+	 * 
+	 * This method does not conflict with the TradeDelegate interface
+	 * and that interface can still be implemented by subclasses for
+	 * the purpose of catching global TradeEvents.
+	 * 
+	 * @param tradeEvent
+	 */
+	protected void onTradeEvent( TradeEvent tradeEvent ) {
+		
+	}
+	
 	/**
 	 * Returns the OrderProcessor object for this Trade.
 	 * 
 	 * @return
 	 */
-	public OrderProcessor order() {
+	public final OrderProcessor order() {
 		return orderProcessor;
 	}
 
@@ -392,38 +442,6 @@ public class Trade implements Serializable {
 			break;
 		}
 		
-//		/* check the status */
-//		if ( orderStatus==OrderStatus.New ) {
-//			/* scrape the report, and log */
-//			processNew(report);
-//		}
-//		else if ( orderStatus==OrderStatus.PendingNew ) {
-//			/* do nothing */
-//		}
-//		else if ( orderStatus == OrderStatus.PartiallyFilled ) {
-//			/* scrape the report, set the side from report, and log */
-//			processPartialFill(report);
-//		}
-//		else if ( orderStatus == OrderStatus.Filled ) {
-//			/* various actions depend on a fill */
-//			processFill(report);
-//		}
-//		else if ( orderStatus == OrderStatus.PendingCancel ) {
-//			/* do nothing */
-//		}
-//		else if ( orderStatus == OrderStatus.Canceled ) {
-//			/* clear the pending fields info,
-//			 * and make sure to scrape.
-//			 */
-//			processCanceled(report);
-//		}
-//		else if ( orderStatus == OrderStatus.Rejected ) {
-//			processRejected(report);
-//		}
-//		else {
-//			// TODO: implement this
-//			logger.error(">>>\tExecution report status is "+orderStatus+", which is not implemented.");
-//		}	
 	}
 	
 	/**

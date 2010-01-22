@@ -154,7 +154,7 @@ public interface Portfolio extends Serializable {
 	 */
     public int size();
 
-	public void setAccountCredentials(BrokerID brokerId, String account);
+	public void setAccountInfo(BrokerID brokerId, String account);
 
 	public BrokerID getBrokerID();
 
