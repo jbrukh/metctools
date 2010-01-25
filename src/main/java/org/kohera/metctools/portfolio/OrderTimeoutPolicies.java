@@ -51,9 +51,30 @@ public final class OrderTimeoutPolicies {
 					);
 			
 			/* ...and cancel the order */
-			trade.order().cancelOrder();
+			trade.order().cancel(true);
 		}		
 	
 	};
 
+	/**
+	 * Like ON_TIMEOUT_WARN, but also attempts to cancel the order in question
+	 * without checking for success.
+	 * 
+	 */
+	public final static OrderTimeoutPolicy ON_TIMEOUT_CANCEL_AND_CLOSE = new OrderTimeoutPolicy() {
+		
+		@Override
+		public void onOrderTimeout(DelegatorStrategy sender, OrderID orderId, 
+				long timeout, Trade trade) {
+			
+			/* log it... */
+			Logger.getLogger(PortfolioStrategy.class).warn(
+					Messages.MSG_ON_TIMEOUT_CANCEL(timeout)
+					);
+			
+			/* ...and cancel the order */
+			trade.order().closeMarket(60000, null);
+		}		
+	
+	};
 }

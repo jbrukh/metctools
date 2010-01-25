@@ -220,7 +220,7 @@ final class PortfolioImpl implements Portfolio {
 	public BigDecimal getTotalPosition() {
 		BigDecimal sum = BigDecimal.ZERO;
 		for ( Trade t : trades.values() ) {
-			sum = sum.add(t.getSignedQuantity());
+			sum = sum.add(t.getSignedQty());
 		}
 		return sum;
 	}

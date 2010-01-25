@@ -15,13 +15,19 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 import org.kohera.metctools.DelegatorStrategy;
 import org.kohera.metctools.Messages;
+import org.kohera.metctools.delegate.AskDelegate;
+import org.kohera.metctools.delegate.BidDelegate;
 import org.kohera.metctools.delegate.ExecutionReportDelegate;
+import org.kohera.metctools.delegate.OrderCancelRejectDelegate;
 import org.kohera.metctools.delegate.TradeDelegate;
 import org.marketcetera.client.ClientInitException;
 import org.marketcetera.core.position.PositionKey;
+import org.marketcetera.event.AskEvent;
+import org.marketcetera.event.BidEvent;
 import org.marketcetera.event.TradeEvent;
 import org.marketcetera.marketdata.MarketDataRequest;
 import org.marketcetera.trade.ExecutionReport;
+import org.marketcetera.trade.OrderCancelReject;
 
 
 /**
@@ -57,12 +63,13 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 	 * @author Administrator
 	 *
 	 */
-	class TradeRouter implements ExecutionReportDelegate, TradeDelegate {
+	class TradeRouter implements ExecutionReportDelegate, TradeDelegate, 
+		BidDelegate, AskDelegate {
+		
 		@Override
 		public void onExecutionReport(DelegatorStrategy sender,
 				ExecutionReport report) {
 			String symbol = report.getSymbol().toString();
-			logger.trace(">>> Received report for symbol '"+symbol+"':");
 			if ( portfolio.hasTrade(symbol) ) {
 				portfolio.getTrade(symbol)
 					.acceptExecutionReport(PortfolioStrategy.this, report);
@@ -76,7 +83,6 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		@Override
 		public void onTrade(DelegatorStrategy sender, TradeEvent tradeEvent) {
 			String symbol = tradeEvent.getSymbol().toString();
-			//logger.trace(">>> Received trade for symbol '"+symbol+"'");
 			if ( portfolio.hasTrade(symbol) ) {
 				portfolio.getTrade(symbol)
 					.acceptTradeEvent(tradeEvent);
@@ -85,6 +91,18 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 				logger.warn(">>> Received external trade event. (Ignoring.)");
 				logger.trace(">>> ...for symbol " + symbol + ".");
 			}
+		}
+
+		@Override
+		public void onBid(DelegatorStrategy sender, BidEvent bidEvent) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void onAsk(DelegatorStrategy sender, AskEvent askEvent) {
+			// TODO Auto-generated method stub
+			
 		}
 		
 	}
