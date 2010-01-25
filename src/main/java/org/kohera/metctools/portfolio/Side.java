@@ -88,4 +88,8 @@ public enum Side {
 	public BigDecimal polarize(BigDecimal value) {
 		return value.multiply(toBigDecimal());
 	}
+	
+	public BigDecimal polarize(Side side) {
+		return polarize(side.toBigDecimal());
+	}
 }

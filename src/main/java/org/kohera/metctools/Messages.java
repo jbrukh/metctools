@@ -13,12 +13,11 @@ import org.marketcetera.trade.OrderID;
 public class Messages {
 
 	/* some errors */
+	public static final String MSG_DATA_PROVIDER_NOT_SET =
+		">>> You must set the data provider!";
 	
-	public static final String DATA_PROVIDER_NOT_SET =
-		"You must set the data provider.";
-	
-	public static final String MARKET_DATA_FAILURE =
-		"Was not able to start the market data.";
+	public static final String MSG_MARKET_DATA_FAILURE =
+		">>> Not able to start the market data!";
 	
 	
 	/* default policy messages */
@@ -32,5 +31,10 @@ public class Messages {
 	
 	public static final String MSG_ON_TIMEOUT_CANCEL(long timeout) {
 		return ">>> Could not fill order in " + timeout + " ms. (Canceling.)";
+	}
+	
+	// TRADE MESSAGES //
+	public static final String MSG_EXTERNAL_REPORT(Trade trade) {
+		return ">>> " + trade + ": received external execution report (ignoring).";
 	}
 }

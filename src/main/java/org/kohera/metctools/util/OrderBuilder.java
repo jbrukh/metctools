@@ -25,6 +25,7 @@ public class OrderBuilder {
 	private OrderSingle 	order;
 	private BrokerID 		defaultBrokerId;
 	private String 			defaultAccount;
+
 	private TimeInForce 	defaultTimeInForce;
 	
 	/**
@@ -66,6 +67,60 @@ public class OrderBuilder {
 	 */	
 	public OrderBuilder(BrokerID brokerId) {
 		this(brokerId,null,TimeInForce.Day);
+	}
+	
+	/**
+	 * Get the broker id.
+	 * 
+	 * @return
+	 */
+	public BrokerID getDefaultBrokerId() {
+		return defaultBrokerId;
+	}
+
+	/**
+	 * Set the broker id.
+	 * 
+	 * @param defaultBrokerId
+	 */
+	public void setDefaultBrokerId(BrokerID defaultBrokerId) {
+		this.defaultBrokerId = defaultBrokerId;
+	}
+
+	/**
+	 * Get the account.
+	 * 
+	 * @return
+	 */
+	public String getDefaultAccount() {
+		return defaultAccount;
+	}
+
+	/**
+	 * Set the account.
+	 * 
+	 * @param defaultAccount
+	 */
+	public void setDefaultAccount(String defaultAccount) {
+		this.defaultAccount = defaultAccount;
+	}
+
+	/**
+	 * Get the TIF.
+	 * 
+	 * @return
+	 */
+	public TimeInForce getDefaultTimeInForce() {
+		return defaultTimeInForce;
+	}
+
+	/**
+	 * Set the TIF.
+	 * 
+	 * @param defaultTimeInForce
+	 */
+	public void setDefaultTimeInForce(TimeInForce defaultTimeInForce) {
+		this.defaultTimeInForce = defaultTimeInForce;
 	}
 	
 	/**

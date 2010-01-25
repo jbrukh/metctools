@@ -45,6 +45,7 @@ public class Trade implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = -8466519547231754210L;
+	private static final long DEFAULT_ORDER_TIMEOUT = 60*1000;
 	
 	/* internal fields  */
 	transient private 
@@ -64,7 +65,7 @@ public class Trade implements Serializable {
 	private OrderID 		pendingOrderId;		// orderId of the order being filled
 	private OrderID			cancelOrderId;      // ...?
 	private BigDecimal 		averagePrice;		// average entry price of last fill
-	private TradeEvent 		lastTrade;			// last trade of the underylying symbol
+	private TradeEvent 		lastTradeEvent;			// last trade of the underylying symbol
 	
 	/* policies */
 	private long 			orderTimeout;		// default timeout in milliseconds
@@ -97,13 +98,13 @@ public class Trade implements Serializable {
 		quantity = leavesQty = cumulativeQty = BigDecimal.ZERO;
 		averagePrice = BigDecimal.ZERO;
 		pendingOrderId = cancelOrderId = null;
-		lastTrade = null;
+		lastTradeEvent = null;
 		side = pendingSide = Side.NONE;
 		
 		fillPolicy = FillPolicies.ON_FILL_WARN;
 		orderTimeoutPolicy = OrderTimeoutPolicies.ON_TIMEOUT_WARN;
 		rejectPolicy = RejectPolicies.ON_REJECT_WARN;
-		orderTimeout = 60*1000;
+		orderTimeout = DEFAULT_ORDER_TIMEOUT;
 		
 		orderProcessor = new OrderProcessor();	
 	}
@@ -245,8 +246,8 @@ public class Trade implements Serializable {
 	 * @return
 	 */
 	public BigDecimal getLastPrice() {
-		if (lastTrade==null) return BigDecimal.ZERO;
-		return lastTrade.getPrice();
+		if (lastTradeEvent==null) return BigDecimal.ZERO;
+		return lastTradeEvent.getPrice();
 	}
 
 	/**
@@ -260,7 +261,7 @@ public class Trade implements Serializable {
 	 * @return
 	 */
 	public TradeEvent getLastTrade() {
-		return lastTrade;
+		return lastTradeEvent;
 	}
 	
 	/**
@@ -295,6 +296,23 @@ public class Trade implements Serializable {
 		return parentPortfolio;
 	}
 	
+	/**
+	 * Get the parent strategy.
+	 * 
+	 * @return
+	 */
+	public final PortfolioStrategy getParentStrategy() {
+		if ( parentPortfolio != null ) {
+			return parentPortfolio.getParentStrategy();
+		}
+		return null;
+	}
+	
+	/**
+	 * Get the last order status known.
+	 * 
+	 * @return
+	 */
 	public final OrderStatus getOrderStatus() {
 		return orderStatus;
 	}
@@ -305,7 +323,7 @@ public class Trade implements Serializable {
 	 * @param tradeEvent
 	 */
 	public final void acceptTradeEvent(TradeEvent tradeEvent) {
-		lastTrade = tradeEvent;
+		lastTradeEvent = tradeEvent;
 		
 		/* for subclass processing of efficiently-routed TradeEvents */
 		onTradeEvent(tradeEvent);
@@ -363,9 +381,9 @@ public class Trade implements Serializable {
 		/* check the correct symbol and account */
 		if ( !symbol.equals(report.getSymbol().toString()) || 
 				!report.getAccount().equals(parentPortfolio.getAccount()) ) {
-			logger.warn( ">>>\t" +
+			logger.warn( ">>> " +
 					this + ": received external execution report (ignoring).");
-			logger.debug(">>>\t" + symbol + "/" + report.getAccount());
+			logger.debug(">>> " + symbol + "/" + report.getAccount());
 			return;
 		}
 		

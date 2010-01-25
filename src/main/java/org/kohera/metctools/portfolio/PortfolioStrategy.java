@@ -22,9 +22,7 @@ import org.marketcetera.core.position.PositionKey;
 import org.marketcetera.event.TradeEvent;
 import org.marketcetera.marketdata.MarketDataRequest;
 import org.marketcetera.trade.ExecutionReport;
-import org.marketcetera.trade.MSymbol;
 
-import edu.emory.mathcs.backport.java.util.Collections;
 
 /**
  * 
@@ -141,7 +139,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 	
 	public void startMarketData() {		
 		if ( !dataProviderIsSet() ) {
-			throw new RuntimeException(Messages.DATA_PROVIDER_NOT_SET);
+			throw new RuntimeException(Messages.MSG_DATA_PROVIDER_NOT_SET);
 		}
 		
 		Collection<String> s = portfolio.getSymbols();

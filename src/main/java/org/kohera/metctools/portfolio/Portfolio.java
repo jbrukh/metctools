@@ -141,11 +141,17 @@ public interface Portfolio extends Serializable {
 	 */
 	public void clearFillPolicy();
 	
-	
+	/**
+	 * Set the default order reject policy.
+	 * 
+	 * @param policy
+	 */
 	public void setRejectPolicy(RejectPolicy policy);
+	
+	/**
+	 * Clear the default order reject policy.
+	 */
 	public void clearRejectPolicy();
-	
-	
 	
 	/**
 	 * Get the number of Trades in the Portfolio.
@@ -154,10 +160,27 @@ public interface Portfolio extends Serializable {
 	 */
     public int size();
 
+    /**
+     * Set the account information for the portfolio.  (This is
+     * necessary to trade.)
+     * 
+     * @param brokerId
+     * @param account
+     */
 	public void setAccountInfo(BrokerID brokerId, String account);
 
+	/**
+	 * Returns the broker id.
+	 * 
+	 * @return
+	 */
 	public BrokerID getBrokerID();
 
+	/**
+	 * Returns the account.
+	 * 
+	 * @return
+	 */
 	public String getAccount();
 
 	/**
@@ -174,6 +197,11 @@ public interface Portfolio extends Serializable {
 	 */
 	public void setParentStrategy(PortfolioStrategy parent);
 	
+	/**
+	 * 
+	 * @param symbol
+	 * @return
+	 */
 	public Trade createTrade(String symbol);
 
 	/**

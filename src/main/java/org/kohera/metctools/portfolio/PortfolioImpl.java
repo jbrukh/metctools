@@ -7,9 +7,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.marketcetera.trade.BrokerID;
-import org.marketcetera.trade.MSymbol;
 
-import com.sun.net.ssl.internal.ssl.Debug;
 
 final class PortfolioImpl implements Portfolio {
 
@@ -30,9 +28,6 @@ final class PortfolioImpl implements Portfolio {
 	private RejectPolicy 		rejectPolicy;
 	private Long 				orderTimeout;
 	
-	/*
-	 * TODO -- add policies for Reject, CancelReject, etc.
-	 */
 
 	/* logging */
 	private final static Logger logger = Logger.getLogger(PortfolioImpl.class);

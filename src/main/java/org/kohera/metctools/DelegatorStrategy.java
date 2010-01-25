@@ -70,10 +70,6 @@ public class DelegatorStrategy extends Strategy
 	private final BrokerStatusListener BROKER_STATUS_LISTENER;
 	private final ServerStatusListener SERVER_STATUS_LISTENER;
 	
-	/* logging */
-	private final static Logger logger = 
-		Logger.getLogger(DelegatorStrategy.class);
-
 	
 	/**
 	 * Inner class that makes exposes action methods from the Strategy class
