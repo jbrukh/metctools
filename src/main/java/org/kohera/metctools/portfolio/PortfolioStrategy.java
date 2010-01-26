@@ -233,14 +233,14 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 	 * 
 	 * @param file
 	 */
-	public void deserializePortfolio( String file ) {
+	public boolean deserializePortfolio( String file ) {
 		
 		/* make sure the portfolio is empty or has no open positions */
 		if ( portfolio.size() != 0 || 
 				portfolio.getTotalPosition() != BigDecimal.ZERO ) {
 			logger.error(">>> Cannot load portfolio from file because " +
 					"the active portfolio is non-empty.");
-			return;
+			return false;
 		}
 		
 		/* input objects */
@@ -256,10 +256,10 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 			logger.error(">>> Serialization error. (" + e.getMessage() + ").");
-			return;
+			return false;
 		} catch (IOException e ) {
 			logger.error(">>> Could not serialize portfolio. (" + e.getMessage() + ")");
-			return;
+			return false;
 		} finally {
 			try {
 				in.close();
@@ -285,6 +285,8 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		
 		logger.info(">>> Deserialized portfolio from " + file + ".");
 		logger.debug(portfolio.toString());
+		
+		return true;
 	}
 
 	/**
