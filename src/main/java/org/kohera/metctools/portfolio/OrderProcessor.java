@@ -78,7 +78,7 @@ public class OrderProcessor extends OrderProcessorBase
 			return;
 		}
 
-		marketOrder(parentTrade.getQuantity(), 
+		marketOrder(parentTrade.getQty(), 
 				parentTrade.getSide().opposite(), timeout, policy, block);
 	}
 
@@ -127,7 +127,7 @@ public class OrderProcessor extends OrderProcessorBase
 	
 	@Override
 	public final void reduceMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy, boolean block) {
-		if ( qty.compareTo(parentTrade.getQuantity()) > 0) {  // should take care of the case with side == NONE
+		if ( qty.compareTo(parentTrade.getQty()) > 0) {  // should take care of the case with side == NONE
 			logger.warn(">>> " + parentTrade + ": Cannot reduce more than you have.");
 			return;
 		}

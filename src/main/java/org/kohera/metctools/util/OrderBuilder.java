@@ -1,6 +1,5 @@
 package org.kohera.metctools.util;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
 
 import org.marketcetera.trade.BrokerID;

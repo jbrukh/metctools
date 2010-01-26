@@ -13,6 +13,11 @@ import java.util.List;
  */
 public class Timer implements Serializable {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -4343698432446376276L;
+	
 	/* fields */
 	public List<TaskThread> threads;
 	

@@ -128,7 +128,7 @@ final class PortfolioImpl implements Portfolio {
 	public void removeTrade(Trade trade) {
 		
 		/* make sure that the position is zeroed */
-		if ( trade.getNetQuantity().compareTo(BigDecimal.ZERO) != 0 ) {
+		if ( trade.getNetQty().compareTo(BigDecimal.ZERO) != 0 ) {
 			throw new RuntimeException(">>> Cannot remove a trade that has a non-zero position.  First, liquidate this trade.");
 		}
 		forcefullyRemoveTrade(trade);

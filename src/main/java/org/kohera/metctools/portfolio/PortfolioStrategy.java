@@ -18,7 +18,6 @@ import org.kohera.metctools.Messages;
 import org.kohera.metctools.delegate.AskDelegate;
 import org.kohera.metctools.delegate.BidDelegate;
 import org.kohera.metctools.delegate.ExecutionReportDelegate;
-import org.kohera.metctools.delegate.OrderCancelRejectDelegate;
 import org.kohera.metctools.delegate.TradeDelegate;
 import org.marketcetera.client.ClientInitException;
 import org.marketcetera.core.position.PositionKey;
@@ -27,7 +26,6 @@ import org.marketcetera.event.BidEvent;
 import org.marketcetera.event.TradeEvent;
 import org.marketcetera.marketdata.MarketDataRequest;
 import org.marketcetera.trade.ExecutionReport;
-import org.marketcetera.trade.OrderCancelReject;
 
 
 /**

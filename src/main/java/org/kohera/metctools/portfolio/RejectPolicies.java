@@ -12,11 +12,16 @@ public class RejectPolicies {
 	 * an order has been filled.
 	 */
 	public final static RejectPolicy ON_REJECT_WARN = new RejectPolicy() {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 8969026511558801870L;
+
 		@Override
 		public void onReject(DelegatorStrategy sender, OrderID orderId,
 				Trade trade, ExecutionReport report) {
 			Logger.getLogger(PortfolioStrategy.class)
-			  .info(">>>\t" + trade + ": REJECTED (" + report.getText() + ") Order " + orderId + ".");
+			  .info(">>> " + trade + ": REJECTED (" + report.getText() + ") Order " + orderId + ".");
 		}		
 	};
 

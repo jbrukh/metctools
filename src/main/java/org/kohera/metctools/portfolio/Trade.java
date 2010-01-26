@@ -36,7 +36,8 @@ public class Trade {
 	private BigDecimal 		cumulativeQty;		// number of shares pending fill
 	private OrderStatus		orderStatus;		// order status of last (pertinent) execution report
 	private Side 			pendingSide;		// side of the incoming fills
-	private BigDecimal 		averagePrice;		// average entry price of last fill
+	private BigDecimal 		averagePrice;		// average price of last fill
+	private BigDecimal		entryPrice;			// average price of the opening order (reset when trade is zeroed) 
 	
 	private TradeEvent 		lastTradeEvent;		// last trade of the underlying symbol
 	private BidEvent 		lastBidEvent;		// last bid of the underlying symbol
@@ -80,101 +81,244 @@ public class Trade {
 	
 	// FIELD GETTERS AND SETTERS //
 	
+	/**
+	 * Returns the parent Portfolio.
+	 * 
+	 */
 	public Portfolio getParentPortfolio() {
 		return parentPortfolio;
 	}
 
+	/**
+	 * Sets the parent Portfolio.  If this portfolio has account information,
+	 * then the information is copied to this Trade.
+	 * 
+	 * If parentPortfolio is null, then this Trade's account information is
+	 * deleted and the parent portfolio is unset.
+	 * 
+	 * @param parentPortfolio
+	 */
 	public void setParentPortfolio(Portfolio parentPortfolio) {
 		this.parentPortfolio = parentPortfolio;
 		setAccountInfo();
 	}
 
+	/**
+	 * Gets the this Trade's order timeout time.
+	 * 
+	 * @return
+	 */
 	public long getOrderTimeout() {
 		return orderTimeout;
 	}
 
+	/**
+	 * Sets the order timeout time.
+	 * 
+	 * @param orderTimeout
+	 */
 	public void setOrderTimeout(long orderTimeout) {
 		this.orderTimeout = orderTimeout;
 	}
 
+	/**
+	 * Gets the FillPolicy.
+	 * 
+	 * @return
+	 */
 	public FillPolicy getFillPolicy() {
 		return fillPolicy;
 	}
 
+	/**
+	 * Sets the FillPolicy.
+	 * 
+	 * @param fillPolicy
+	 */
 	public void setFillPolicy(FillPolicy fillPolicy) {
 		this.fillPolicy = fillPolicy;
 	}
 
+	/**
+	 * Gets the OrderTimeoutPolicy for this Trade.
+	 * 
+	 * @return
+	 */
 	public OrderTimeoutPolicy getOrderTimeoutPolicy() {
 		return orderTimeoutPolicy;
 	}
 
+	/**
+	 * Sets the OrderTimeoutPolicy for this Trade.
+	 * 
+	 * @param orderTimeoutPolicy
+	 */
 	public void setOrderTimeoutPolicy(OrderTimeoutPolicy orderTimeoutPolicy) {
 		this.orderTimeoutPolicy = orderTimeoutPolicy;
 	}
 
+	/**
+	 * Gets the OrderRejectPolicy.
+	 * 
+	 * @return
+	 */
 	public RejectPolicy getRejectPolicy() {
 		return rejectPolicy;
 	}
 
+	/**
+	 * Sets the OrderRejectPolicy.
+	 * 
+	 * @param rejectPolicy
+	 */
 	public void setRejectPolicy(RejectPolicy rejectPolicy) {
 		this.rejectPolicy = rejectPolicy;
 	}
 
-	public OrderProcessor getOrderProcessor() {
+	/**
+	 * Gets the OrderInterface for this Trade.  This is an alias
+	 * to order().
+	 * 
+	 * @see order()
+	 * @return
+	 */
+	public OrderInterface getOrderInterface() {
 		return orderProcessor;
 	}
 
+	/**
+	 * Gets the symbol for this Trade.
+	 * 
+	 * @return
+	 */
 	public String getSymbol() {
 		return symbol;
 	}
 
-	public BigDecimal getQuantity() {
+	/**
+	 * Gets the transacted quantity of this Trade.
+	 * 
+	 * Explanation: The transacted quantity is updated once a trade
+	 * fully fills (or is cancelled).  While a trade is filling, the quantity
+	 * differential as a result of partial fills is not reflected in this
+	 * quantity.
+	 * 
+	 * @see getNetQty();
+	 * @return
+	 */
+	public BigDecimal getQty() {
 		return quantity;
 	}
 
+	/**
+	 * Returns the side of this trade.  Side is NONE when the trade has no
+	 * position.
+	 * 
+	 * @return
+	 */
 	public Side getSide() {
 		return side;
 	}
 
+	/**
+	 * If the trade is filling, returns the number of shares left to be
+	 * filled.
+	 * 
+	 * @return
+	 */
 	public BigDecimal getLeavesQty() {
 		return leavesQty;
 	}
 
+	/**
+	 * If the trade is filling, returns the number of shares cumulatively
+	 * filled.  Note that this is different then the result of getQty(), which
+	 * returns the transacted quantity;  the cumulative quantity is real
+	 * position, but it is not accounted for by getQty() until the trade is
+	 * concluded.
+	 * 
+	 * @see getQty(), getNetQty()
+	 * @return
+	 */
 	public BigDecimal getCumulativeQty() {
 		return cumulativeQty;
 	}
 
+	/**
+	 * Returns the orderStatus of the most recent execution report.
+	 * 
+	 * @return
+	 */
 	public OrderStatus getOrderStatus() {
 		return orderStatus;
 	}
 
+	/**
+	 * If an order is pending, returns the side of the pending order.
+	 * 
+	 * @return
+	 */
 	public Side getPendingSide() {
 		return pendingSide;
 	}
 
+	/**
+	 * Returns the OrderID of the pending order, if it exists.
+	 * 
+	 * @return
+	 */
 	public OrderID getPendingOrderId() {
 		return orderProcessor.getPendingOrderId();
 	}
 
+	/**
+	 * Returns the OrderID of the cancel order, if it exists.
+	 * 
+	 * @return
+	 */
 	public OrderID getCancelOrderId() {
 		return orderProcessor.getCancelOrderId();
 	}
 
+	/**
+	 * Returns the last average fill price as given by the last
+	 * received execution report.
+	 * 
+	 * @return
+	 */
 	public BigDecimal getAveragePrice() {
 		return averagePrice;
 	}
 
+	/**
+	 * Returns the last received TradeEvent.
+	 * 
+	 * @return
+	 */
 	public TradeEvent getLastTradeEvent() {
 		return lastTradeEvent;
 	}
 	
+	/**
+	 * Returns the broker id associated with this Trade.
+	 * 
+	 * @return
+	 */
 	public BrokerID getBrokerId() {
 		return brokerId;
 	}
 
-	public String getAccount() {
+	/**
+	 * Returns the account associated with this Trade.
+	 * 
+	 * @return
+	 */
+	public final String getAccount() {
 		return account;
+	}
+	
+	public final BigDecimal getEntryPrice() {
+		return entryPrice;
 	}
 	
 	/**
@@ -182,8 +326,8 @@ public class Trade {
 	 * 
 	 * @return
 	 */
-	public OrderInterface order() {
-		return (OrderInterface)orderProcessor;
+	public final OrderInterface order() {
+		return orderProcessor;
 	}
 
 	/**
@@ -228,7 +372,7 @@ public class Trade {
 	 * @return
 	 */
 	public final boolean isOpen() {
-		return (getNetQuantity().intValue()!=0);
+		return (getNetQty().intValue()!=0);
 	}
 	
 	/**
@@ -271,9 +415,11 @@ public class Trade {
 	 * If the fills up to this point in time have caused the position to change
 	 * sides, this is denoted with a negative sign in the result.
 	 * 
+	 * TODO -- change that!
+	 * 
 	 * @return
 	 */
-	public final BigDecimal getNetQuantity() {
+	public final BigDecimal getNetQty() {
 		/* 1 = position and fills are the same side; 
 		 * -1 = position and fills are different side;
 		 * recall that all quantities are unsigned */
@@ -281,15 +427,27 @@ public class Trade {
 		return quantity.add( polarity.multiply(cumulativeQty));
 	}
 	
+	/**
+	 * Returns the instantaneous signed position of this trade.
+	 * 
+	 * @see getNetQty()
+	 * 
+	 * @return
+	 */
+	public final BigDecimal getSignedNetQty() {
+		return side.polarize(getNetQty());
+	}
+	
+	@Override
 	public String toString() {
 		return String.format("{%s:[%.2f]:%s%d%s@%.4f}",
 				getSymbol(),
 				getLastPrice().floatValue(),
 				(getSide()==Side.BUY?"+":(getSide()==Side.SELL?"-":"")),
-				getQuantity().intValue(),
+				getQty().intValue(),
 				/* shows pending values if order is pending */
 				isFilling()? "(" + getCumulativeQty() + "cq/"+ getLeavesQty() + "lq)" : "",
-				getAveragePrice().floatValue());
+				getEntryPrice().floatValue());
 	}
 	
 	
@@ -502,17 +660,21 @@ public class Trade {
 
 		scrapeReport(report);
 		updateQuantity(report);
+		
+		if ( entryPrice.intValue()==0 ) {
+			entryPrice = averagePrice;
+		}
 	
 		/* unblock the out thread */
 		orderProcessor.orderSuccess();
 		
 		/* clean up */
 		OrderID orderID = report.getOrderID();
-		clearPendingFields();  // watch out, this clears order cancels too
+		clearPendingFields();
 		
 		/* reset trade if zeroed */
-		if ( getNetQuantity().intValue()==0) {
-			side = Side.NONE;
+		if ( getNetQty().intValue()==0) {
+			clearAccountingFields();
 		}
 		
 		/* order has been filled -- execute fill policy*/
@@ -533,7 +695,7 @@ public class Trade {
 	 */
 	private void updateQuantity( ExecutionReport fillReport ) {
 		/* add the cumulativeQty to the quantity */
-		quantity = getNetQuantity(); 
+		quantity = getNetQty(); 
 		
 		/* check if we have switched sides */
 		if ( quantity.compareTo(BigDecimal.ZERO)<0) {
@@ -589,11 +751,10 @@ public class Trade {
 	 * Initialization.
 	 */
 	private final void init() {
-		quantity = leavesQty = cumulativeQty = BigDecimal.ZERO;
-		averagePrice = BigDecimal.ZERO;
-		lastTradeEvent = null;
-		side = pendingSide = Side.NONE;
-		
+		/* clear accounting fields */
+		clearAccountingFields();
+	
+		/* set the default policies */
 		fillPolicy = FillPolicies.ON_FILL_WARN;
 		orderTimeoutPolicy = OrderTimeoutPolicies.ON_TIMEOUT_WARN;
 		rejectPolicy = RejectPolicies.ON_REJECT_WARN;
@@ -642,5 +803,13 @@ public class Trade {
 		pendingSide = Side.NONE;		
 	}
 	
+	private final void clearAccountingFields() {
+		quantity = leavesQty = cumulativeQty = BigDecimal.ZERO;
+		entryPrice = averagePrice = BigDecimal.ZERO;
+		lastTradeEvent = null;
+		lastBidEvent = null;
+		lastAskEvent = null;
+		side = pendingSide = Side.NONE;
+	}
 	
 }
