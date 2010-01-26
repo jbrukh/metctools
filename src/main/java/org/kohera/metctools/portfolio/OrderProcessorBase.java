@@ -9,22 +9,33 @@ import org.marketcetera.trade.BrokerID;
 
 class OrderProcessorBase {
 
-	private static final Object transactionLock = new Object();
+	  ////////////
+	 // FIELDS //
+	////////////
+	
+	/* used for synchronization of the order-sending methods */
+	private static final Object transactionLock 
+			= new Object();
 
-	private BrokerID 	brokerId;
-	private String 		account;
-	private OrderID		pendingOrderId;
-	private OrderID		cancelOrderId;
+	private BrokerID 	brokerId;				// broker id going to the OrderBuilder
+	private String 		account;				// account string going to the OrderBuilder
+	private OrderID		pendingOrderId;			// order to be filled
+	private OrderID		cancelOrderId;			// cancel order id, which is the subordinate of the pendingOrder
 
-	protected final OrderBuilder orderBuilder;
-	protected final Trade parentTrade;
+	protected final OrderBuilder orderBuilder;	// object for building metc OrderSingles
+	protected final Trade parentTrade;			// ref. to the parent trade
 
-	private Thread		outThr;
+	private Thread		outThr;					// outgoing thread that sends orders and may block
+	
 
 	/* logging */
 	private final static Logger logger = 
 		Logger.getLogger(OrderProcessorBase.class);
 
+  	  //////////////////
+	 // CONSTRUCTORS //
+	//////////////////
+	
 	/**
 	 * Get a new instance.
 	 * 
@@ -48,7 +59,10 @@ class OrderProcessorBase {
 		setAccountInfo(brokerId, account);
 	}
 
-
+	  /////////////////////////
+	 // GETTERS AND SETTERS //
+    /////////////////////////
+	
 	/**
 	 * Set the account information for this OrderProcessor.
 	 * 
@@ -90,10 +104,16 @@ class OrderProcessorBase {
 		return cancelOrderId;
 	}
 
+	/**
+	 * Returns true if and only if an order is pending fill.
+	 * 
+	 * @return
+	 */
 	public final boolean isPending() {
 		return pendingOrderId!=null;
 	}
 
+	
 	// PRIVATE METHODS //
 
 	/**
@@ -204,6 +224,11 @@ class OrderProcessorBase {
 		}
 	}
 
+	public final void orderFailure() {
+		logger.trace(" --- Order transaction seems to have failed...");
+		orderSuccess();
+	}
+	
 	public final void disrupt() {
 		outThr.interrupt();
 	}

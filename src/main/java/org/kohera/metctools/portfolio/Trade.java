@@ -177,8 +177,13 @@ public class Trade {
 		return account;
 	}
 	
-	public OrderProcessor order() {
-		return orderProcessor;
+	/**
+	 * Return the order interface.
+	 * 
+	 * @return
+	 */
+	public OrderInterface order() {
+		return (OrderInterface)orderProcessor;
 	}
 
 	/**
@@ -197,18 +202,43 @@ public class Trade {
 	
 	// ACCOUNTING INFORMATION //
 	
+	/**
+	 * Returns true if and only if there is an order pending fill.
+	 * 
+	 */
 	public final boolean isPending() {
 		return orderProcessor.isPending();
 	}
 	
+	/**
+	 * Returns true if and only if there is an order pending fill,
+	 * and at least one execution report has been received.
+	 * 
+	 * @return
+	 */
 	public final boolean isFilling() {
 		return (isPending() && getCumulativeQty().intValue()!=0);
 	}
 	
+	/**
+	 * Returns true if and only if the current instantaneous position
+	 * in this security is non-zero.
+	 * 
+	 * 
+	 * @return
+	 */
 	public final boolean isOpen() {
 		return (getNetQuantity().intValue()!=0);
 	}
 	
+	/**
+	 * Returns the quantity multiplied by the side of the trade.  If the
+	 * trade is currently being filled, this is not taken into account.
+	 * 
+	 * @see getNetQuantity()
+	 * 
+	 * @return
+	 */
 	public final BigDecimal getSignedQty() {
 		return side.polarize(quantity);
 	}
@@ -490,6 +520,17 @@ public class Trade {
 				            orderID, this);		
 	}
 	
+	/**
+	 * 
+	 * Internal method for committing the pending quantities to the
+	 * working quantity fields.
+	 * 
+	 * Explanation: Incoming position is accounted for by the cumulativeQty
+	 * and leavesQty fields.  Once the order is filled, leavesQty becomes 0
+	 * and the cumulativeQty is incorporated into the quantity field.
+	 * 
+	 * @param fillReport
+	 */
 	private void updateQuantity( ExecutionReport fillReport ) {
 		/* add the cumulativeQty to the quantity */
 		quantity = getNetQuantity(); 
@@ -504,10 +545,12 @@ public class Trade {
 	}
 	
 	/**
+	 * 
 	 * Internal method for processing cancels.
+	 * 
 	 * @param report
 	 */
-	private void processCanceled( ExecutionReport report ) {
+	private final void processCanceled( ExecutionReport report ) {
 		
 		/* get the report info */
 		scrapeReport(report);
@@ -525,14 +568,17 @@ public class Trade {
 		clearPendingFields();
 	}
 	
-	private void processRejected( ExecutionReport report ) {
+	/**
+	 * 
+	 * Internal method for processing rejection messages.
+	 * 
+	 * @param report
+	 */
+	private final void processRejected( ExecutionReport report ) {
+		orderProcessor.orderFailure();
 		rejectPolicy.onReject(parentPortfolio.getParentStrategy(),
 				report.getOrderID(),this,report);
 	}
-	
-	
-	
-	
 	
 	
 	
@@ -578,15 +624,20 @@ public class Trade {
 	 * 
 	 * @param report
 	 */
-	private void scrapeReport(ExecutionReport report) {
+	private final void scrapeReport(ExecutionReport report) {
 		orderStatus 	= report.getOrderStatus();
 		cumulativeQty 	= report.getCumulativeQuantity();
 		leavesQty 		= report.getLeavesQuantity();
 		pendingSide 	= Side.fromMetcSide(report.getSide());
 		averagePrice 	= report.getAveragePrice();
 	}
-		
-	private void clearPendingFields() {
+	
+	/**
+	 * Utility method for clearing the accounting fields that
+	 * keep track of the incoming fills.
+	 * 
+	 */
+	private final void clearPendingFields() {
 		leavesQty = cumulativeQty = BigDecimal.ZERO;
 		pendingSide = Side.NONE;		
 	}
