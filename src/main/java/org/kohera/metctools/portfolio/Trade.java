@@ -438,6 +438,26 @@ public class Trade {
 		return side.polarize(getNetQty());
 	}
 	
+	/**
+	 * Returns the profit-loss for this trade.
+	 * 
+	 * The profit-loss is based on the entry price given by
+	 * entryPrice() and the last data event that has occurred.
+	 * This, of course, implies that the trade should be in a
+	 * portfolio and data should be turned on for this method
+	 * to return a correct result.
+	 * 
+	 * @return
+	 */
+	public final BigDecimal getProfitLoss() {
+		BigDecimal last = getLastPrice();
+		if ( last == null || entryPrice == null ) {
+			return BigDecimal.ZERO;
+		}
+		return last.divide(entryPrice,BigDecimal.ROUND_HALF_UP)
+						.subtract(BigDecimal.valueOf(1));
+	}
+	
 	@Override
 	public String toString() {
 		return String.format("{%s:[%.2f]:%s%d%s@%.4f}",

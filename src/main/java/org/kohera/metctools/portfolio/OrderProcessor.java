@@ -42,6 +42,12 @@ public class OrderProcessor extends OrderProcessorBase
 			OrderTimeoutPolicy policy) {
 		marketOrder(qty, side, timeout, policy, true);
 	}
+	
+	@Override
+	public final void marketOrder( BigDecimal qty, Side side, boolean block ) {
+		marketOrder(qty, side, parentTrade.getOrderTimeout(), 
+				parentTrade.getOrderTimeoutPolicy(), block);
+	}
 
 
 	// CANCELATION //

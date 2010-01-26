@@ -35,6 +35,16 @@ public interface OrderInterface {
 	void marketOrder( BigDecimal qty, Side side, long timeout, 
 			OrderTimeoutPolicy policy );
 	
+	/**
+	 * Place a market order using the Trade's default timeout time and
+	 * OrderTimeoutPolicy.
+	 * 
+	 * @param qty
+	 * @param side
+	 * @param block
+	 */
+	void marketOrder( BigDecimal qty, Side side, boolean block);
+	
 	
 	// CANCELATION //
 	
