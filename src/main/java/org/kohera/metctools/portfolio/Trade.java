@@ -1,5 +1,6 @@
 package org.kohera.metctools.portfolio;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 import org.apache.log4j.Logger;
@@ -13,7 +14,7 @@ import org.marketcetera.trade.ExecutionReport;
 import org.marketcetera.trade.OrderID;
 import org.marketcetera.trade.OrderStatus;
 
-public class Trade {
+public class Trade implements Serializable {
 
 	/**
 	 * 
@@ -53,7 +54,8 @@ public class Trade {
 	private RejectPolicy	rejectPolicy;
 	
 	/* logging */
-	private final static Logger logger = Logger.getLogger(Trade.class);
+	private final static Logger logger = 
+		Logger.getLogger(Trade.class);
 	
 	
 	// CONSTRUCTORS //
@@ -85,7 +87,7 @@ public class Trade {
 	 * Returns the parent Portfolio.
 	 * 
 	 */
-	public Portfolio getParentPortfolio() {
+	public final Portfolio getParentPortfolio() {
 		return parentPortfolio;
 	}
 
@@ -98,7 +100,7 @@ public class Trade {
 	 * 
 	 * @param parentPortfolio
 	 */
-	public void setParentPortfolio(Portfolio parentPortfolio) {
+	public final void setParentPortfolio(Portfolio parentPortfolio) {
 		this.parentPortfolio = parentPortfolio;
 		setAccountInfo();
 	}
@@ -108,7 +110,7 @@ public class Trade {
 	 * 
 	 * @return
 	 */
-	public long getOrderTimeout() {
+	public final long getOrderTimeout() {
 		return orderTimeout;
 	}
 
@@ -117,7 +119,7 @@ public class Trade {
 	 * 
 	 * @param orderTimeout
 	 */
-	public void setOrderTimeout(long orderTimeout) {
+	public final void setOrderTimeout(long orderTimeout) {
 		this.orderTimeout = orderTimeout;
 	}
 
@@ -126,7 +128,7 @@ public class Trade {
 	 * 
 	 * @return
 	 */
-	public FillPolicy getFillPolicy() {
+	public final FillPolicy getFillPolicy() {
 		return fillPolicy;
 	}
 
@@ -135,7 +137,7 @@ public class Trade {
 	 * 
 	 * @param fillPolicy
 	 */
-	public void setFillPolicy(FillPolicy fillPolicy) {
+	public final void setFillPolicy(FillPolicy fillPolicy) {
 		this.fillPolicy = fillPolicy;
 	}
 
@@ -144,7 +146,7 @@ public class Trade {
 	 * 
 	 * @return
 	 */
-	public OrderTimeoutPolicy getOrderTimeoutPolicy() {
+	public final OrderTimeoutPolicy getOrderTimeoutPolicy() {
 		return orderTimeoutPolicy;
 	}
 
@@ -153,7 +155,7 @@ public class Trade {
 	 * 
 	 * @param orderTimeoutPolicy
 	 */
-	public void setOrderTimeoutPolicy(OrderTimeoutPolicy orderTimeoutPolicy) {
+	public final void setOrderTimeoutPolicy(OrderTimeoutPolicy orderTimeoutPolicy) {
 		this.orderTimeoutPolicy = orderTimeoutPolicy;
 	}
 
@@ -162,7 +164,7 @@ public class Trade {
 	 * 
 	 * @return
 	 */
-	public RejectPolicy getRejectPolicy() {
+	public final RejectPolicy getRejectPolicy() {
 		return rejectPolicy;
 	}
 
@@ -171,7 +173,7 @@ public class Trade {
 	 * 
 	 * @param rejectPolicy
 	 */
-	public void setRejectPolicy(RejectPolicy rejectPolicy) {
+	public final void setRejectPolicy(RejectPolicy rejectPolicy) {
 		this.rejectPolicy = rejectPolicy;
 	}
 
@@ -182,7 +184,7 @@ public class Trade {
 	 * @see order()
 	 * @return
 	 */
-	public OrderInterface getOrderInterface() {
+	public final OrderInterface getOrderInterface() {
 		return orderProcessor;
 	}
 
@@ -191,7 +193,7 @@ public class Trade {
 	 * 
 	 * @return
 	 */
-	public String getSymbol() {
+	public final String getSymbol() {
 		return symbol;
 	}
 
@@ -206,7 +208,7 @@ public class Trade {
 	 * @see getNetQty();
 	 * @return
 	 */
-	public BigDecimal getQty() {
+	public final BigDecimal getQty() {
 		return quantity;
 	}
 
@@ -216,7 +218,7 @@ public class Trade {
 	 * 
 	 * @return
 	 */
-	public Side getSide() {
+	public final Side getSide() {
 		return side;
 	}
 
@@ -226,7 +228,7 @@ public class Trade {
 	 * 
 	 * @return
 	 */
-	public BigDecimal getLeavesQty() {
+	public final BigDecimal getLeavesQty() {
 		return leavesQty;
 	}
 
@@ -240,7 +242,7 @@ public class Trade {
 	 * @see getQty(), getNetQty()
 	 * @return
 	 */
-	public BigDecimal getCumulativeQty() {
+	public final BigDecimal getCumulativeQty() {
 		return cumulativeQty;
 	}
 
@@ -249,7 +251,7 @@ public class Trade {
 	 * 
 	 * @return
 	 */
-	public OrderStatus getOrderStatus() {
+	public final OrderStatus getOrderStatus() {
 		return orderStatus;
 	}
 
@@ -258,7 +260,7 @@ public class Trade {
 	 * 
 	 * @return
 	 */
-	public Side getPendingSide() {
+	public final Side getPendingSide() {
 		return pendingSide;
 	}
 
@@ -267,7 +269,7 @@ public class Trade {
 	 * 
 	 * @return
 	 */
-	public OrderID getPendingOrderId() {
+	public final OrderID getPendingOrderId() {
 		return orderProcessor.getPendingOrderId();
 	}
 
@@ -276,7 +278,7 @@ public class Trade {
 	 * 
 	 * @return
 	 */
-	public OrderID getCancelOrderId() {
+	public final OrderID getCancelOrderId() {
 		return orderProcessor.getCancelOrderId();
 	}
 
@@ -286,7 +288,7 @@ public class Trade {
 	 * 
 	 * @return
 	 */
-	public BigDecimal getAveragePrice() {
+	public final BigDecimal getAveragePrice() {
 		return averagePrice;
 	}
 
@@ -295,7 +297,7 @@ public class Trade {
 	 * 
 	 * @return
 	 */
-	public TradeEvent getLastTradeEvent() {
+	public final TradeEvent getLastTradeEvent() {
 		return lastTradeEvent;
 	}
 	
@@ -304,7 +306,7 @@ public class Trade {
 	 * 
 	 * @return
 	 */
-	public BrokerID getBrokerId() {
+	public final BrokerID getBrokerId() {
 		return brokerId;
 	}
 
@@ -317,6 +319,11 @@ public class Trade {
 		return account;
 	}
 	
+	/**
+	 * Returns the entry price for this Trade.
+	 * 
+	 * @return
+	 */
 	public final BigDecimal getEntryPrice() {
 		return entryPrice;
 	}
@@ -397,11 +404,49 @@ public class Trade {
 	 * 
 	 * @return
 	 */
-	public BigDecimal getLastPrice() {
+	public final BigDecimal getLastPrice() {
 		if (lastTradeEvent==null) return BigDecimal.ZERO;
 		return lastTradeEvent.getPrice();
 	}
 
+	/**
+	 * Returns the last ask event.
+	 * 
+	 * @return
+	 */
+	public final AskEvent getLastAskEvent() {
+		return lastAskEvent;
+	}
+	
+	/**
+	 * Returns the last ask event price.
+	 * 
+	 * @return
+	 */
+	public final BigDecimal getLastAskPrice() {
+		if ( lastAskEvent==null) {
+			return BigDecimal.ZERO;
+		} return lastAskEvent.getPrice();
+	}
+	
+	/**
+	 * Returns the last bid event.
+	 * 
+	 * @return
+	 */
+	public final BidEvent getLastBidEvent() {
+		return lastBidEvent;
+	}
+	
+	/**
+	 * Returns the last bid event price.
+	 * 
+	 * @return
+	 */
+	public final BigDecimal getLastBidPrice() {
+		return lastBidEvent.getPrice();
+	}
+	
 	/**
 	 * Returns the instantaneous (usually unsigned) position of this trade.
 	 * 

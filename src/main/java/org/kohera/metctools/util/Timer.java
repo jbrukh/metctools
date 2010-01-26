@@ -35,7 +35,14 @@ public class Timer implements Serializable {
 	 * @author Jake Brukhman
 	 *
 	 */
-	public class TaskThread extends Thread {
+	public class TaskThread extends Thread 
+			implements Serializable {
+		
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -530116687089771733L;
+		
 		/* fields */
 		private long delay;
 		private Task task;

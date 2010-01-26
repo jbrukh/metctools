@@ -208,6 +208,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 			out = new ObjectOutputStream(fos);
 			out.writeObject(portfolio);
 		} catch (IOException e ) {
+			e.printStackTrace();
 			logger.error(">>> Could not serialize portfolio. (" + e.getMessage() + ")");
 			return;
 		} finally {
