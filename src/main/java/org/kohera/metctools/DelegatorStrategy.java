@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.kohera.metctools.delegate.AskDelegate;
 import org.kohera.metctools.delegate.BidDelegate;
 import org.kohera.metctools.delegate.BrokerStatusDelegate;

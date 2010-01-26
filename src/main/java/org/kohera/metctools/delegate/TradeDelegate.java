@@ -6,11 +6,18 @@ import org.marketcetera.event.TradeEvent;
 /**
  * Delegate interface for TradeEvents.
  * 
- * @author Administrator
+ * @author Jake Brukhman
  *
  */
 public interface TradeDelegate extends EventDelegate {
 	
+	/**
+	 * 
+	 * Implement this method to handle TradeEvents.
+	 * 
+	 * @param sender
+	 * @param tradeEvent
+	 */
 	public void onTrade( DelegatorStrategy sender, TradeEvent tradeEvent );
 	
 }
