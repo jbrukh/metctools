@@ -77,7 +77,7 @@ public interface Portfolio extends Serializable {
 	 * 
 	 * @param action
 	 */
-	public void forEach( Action<Trade> action );
+	public void forEach( Action action );
 	
 	/**
 	 * Set the order timeout policy for the entire portfolio.

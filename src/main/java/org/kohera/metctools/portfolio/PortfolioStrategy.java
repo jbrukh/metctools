@@ -68,7 +68,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		public void onExecutionReport(DelegatorStrategy sender,
 				ExecutionReport report) {
 			String symbol = report.getSymbol().toString();
-			if ( portfolio.hasTrade(symbol) ) {
+			if ( portfolio.hasTrade(symbol) && report.getAccount().equals(portfolio.getAccount()) ) {
 				portfolio.getTrade(symbol)
 					.acceptExecutionReport(PortfolioStrategy.this, report);
 			} else {
@@ -276,7 +276,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		 * (i.e. all memory of pending trades and timeouts
 		 * is reset)
 		 */
-		portfolio.forEach( new Action<Trade>() {
+		portfolio.forEach( new Action() {
 			@Override
 			public void performAction(Trade trade) {
 				trade.setParentPortfolio(portfolio);

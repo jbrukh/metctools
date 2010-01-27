@@ -26,15 +26,22 @@ public class OrderProcessor extends OrderProcessorBase
 
 	// BASE ORDERS //
 
+	
 	@Override
 	public final void marketOrder( BigDecimal qty, Side side, long timeout, 
-			OrderTimeoutPolicy policy, boolean block ) {
+			OrderTimeoutPolicy policy, FillPolicy fillPolicy, boolean block ) {
 		/* round to integer */
 		qty = qty.setScale(0);
 		OrderSingle order = getOrderBuilder()
 		.makeMarket(parentTrade.getSymbol(), qty, side.toMetcSide())
 		.getOrder();
-		sendOrder(order, timeout, policy, block);
+		sendOrder(order, timeout, policy, fillPolicy, block);
+	}
+	
+	@Override
+	public final void marketOrder( BigDecimal qty, Side side, long timeout, 
+			OrderTimeoutPolicy policy, boolean block ) {
+		marketOrder(qty, side, timeout, policy, null, block);
 	}
 
 	@Override
@@ -43,6 +50,12 @@ public class OrderProcessor extends OrderProcessorBase
 		marketOrder(qty, side, timeout, policy, true);
 	}
 	
+	@Override
+	public final void marketOrder( BigDecimal qty, Side side, FillPolicy fillPolicy, boolean block ) {
+		marketOrder(qty, side, parentTrade.getOrderTimeout(), 
+				parentTrade.getOrderTimeoutPolicy(), fillPolicy, block);
+	}
+
 	@Override
 	public final void marketOrder( BigDecimal qty, Side side, boolean block ) {
 		marketOrder(qty, side, parentTrade.getOrderTimeout(), 
@@ -74,7 +87,8 @@ public class OrderProcessor extends OrderProcessorBase
 	// CLOSE THE TRADE //
 
 	@Override
-	public final void closeMarket( long timeout, OrderTimeoutPolicy policy, boolean block ) {		
+	public final void closeMarket( long timeout, OrderTimeoutPolicy policy, 
+			FillPolicy fillPolicy, boolean block ) {		
 
 		/* if there is pending position, then cancel it */
 		cancel(true);
@@ -85,7 +99,13 @@ public class OrderProcessor extends OrderProcessorBase
 		}
 
 		marketOrder(parentTrade.getQty(), 
-				parentTrade.getSide().opposite(), timeout, policy, block);
+				parentTrade.getSide().opposite(), timeout, 
+				policy, fillPolicy, block);
+	}
+	
+	@Override
+	public final void closeMarket( long timeout, OrderTimeoutPolicy policy, boolean block ) {
+		closeMarket(timeout, policy, null, block);
 	}
 
 	@Override
@@ -93,6 +113,12 @@ public class OrderProcessor extends OrderProcessorBase
 		closeMarket(timeout, policy, true);
 	}
 
+	@Override
+	public final void closeMarket( FillPolicy fillPolicy, boolean block ) {
+		closeMarket(parentTrade.getOrderTimeout(), 
+				parentTrade.getOrderTimeoutPolicy(), fillPolicy, block );
+	}
+	
 	@Override
 	public final void closeMarket( boolean block ) {
 		closeMarket(parentTrade.getOrderTimeout(), parentTrade.getOrderTimeoutPolicy(), block );
@@ -102,23 +128,42 @@ public class OrderProcessor extends OrderProcessorBase
 	// TRADING //
 	
 	@Override
+	public final void longMarket( BigDecimal qty, long timeout, 
+			OrderTimeoutPolicy policy, FillPolicy fillPolicy,
+			boolean block) {
+		marketOrder(qty,Side.BUY,timeout,policy,fillPolicy, block);
+	}
+	
+	@Override
 	public final void longMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy, boolean block) {
-		marketOrder(qty,Side.BUY,timeout,policy, block);
+		longMarket(qty,timeout,policy,null, block);
 	}
 	
 	@Override
 	public final void longMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy) {
 		longMarket(qty,timeout,policy, true);	
 	}
-	
+
+	@Override
+	public final void longMarket( BigDecimal qty, FillPolicy fillPolicy, boolean block ) {
+		longMarket(qty, parentTrade.getOrderTimeout(), 
+				parentTrade.getOrderTimeoutPolicy(), fillPolicy, block);
+	}
+
 	@Override
 	public final void longMarket( BigDecimal qty, boolean block ) {
 		longMarket(qty, parentTrade.getOrderTimeout(), parentTrade.getOrderTimeoutPolicy(), block);
 	}
 	
 	@Override
+	public final void shortMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy,
+			FillPolicy fillPolicy, boolean block) {
+		marketOrder(qty,Side.SELL,timeout,policy, fillPolicy, block);
+	}
+	
+	@Override
 	public final void shortMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy, boolean block) {
-		marketOrder(qty,Side.SELL,timeout,policy, block);
+		shortMarket(qty,timeout,policy, null, block);
 	}
 	
 	@Override
@@ -127,17 +172,30 @@ public class OrderProcessor extends OrderProcessorBase
 	}
 	
 	@Override
+	public final void shortMarket( BigDecimal qty, FillPolicy fillPolicy, boolean block ) {
+		longMarket(qty, parentTrade.getOrderTimeout(), 
+				parentTrade.getOrderTimeoutPolicy(), block);
+	}
+	
+	@Override
 	public final void shortMarket( BigDecimal qty, boolean block ) {
 		longMarket(qty, parentTrade.getOrderTimeout(), parentTrade.getOrderTimeoutPolicy(), block);
 	}
 	
 	@Override
-	public final void reduceMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy, boolean block) {
+	public final void reduceMarket( BigDecimal qty, long timeout, 
+			OrderTimeoutPolicy policy, FillPolicy fillPolicy, boolean block) {
 		if ( qty.compareTo(parentTrade.getQty()) > 0) {  // should take care of the case with side == NONE
 			logger.warn(">>> " + parentTrade + ": Cannot reduce more than you have.");
 			return;
 		}
-		marketOrder(qty, parentTrade.getSide().opposite(), timeout, policy, block );
+		marketOrder(qty, parentTrade.getSide().opposite(), timeout, policy, fillPolicy, block );
+	}
+	
+	@Override
+	public final void reduceMarket( BigDecimal qty, long timeout, 
+			OrderTimeoutPolicy policy, boolean block) {
+		reduceMarket(qty, timeout, policy, null, block);
 	}
 	
 	@Override
@@ -146,23 +204,42 @@ public class OrderProcessor extends OrderProcessorBase
 	}
 	
 	@Override
+	public final void reduceMarket( BigDecimal qty, FillPolicy fillPolicy, boolean block ) {
+		reduceMarket(qty, parentTrade.getOrderTimeout(), 
+				parentTrade.getOrderTimeoutPolicy(), fillPolicy, block);
+	}
+	
+	@Override
 	public final void reduceMarket( BigDecimal qty, boolean block ) {
-		longMarket(qty, parentTrade.getOrderTimeout(), parentTrade.getOrderTimeoutPolicy(), block);
+		reduceMarket(qty, parentTrade.getOrderTimeout(), parentTrade.getOrderTimeoutPolicy(), block);
 	}
 
 	@Override
+	public final void augmentMarket( BigDecimal qty, long timeout, 
+			OrderTimeoutPolicy policy, FillPolicy fillPolicy, boolean block) {
+		marketOrder(qty, parentTrade.getSide(), timeout, policy, fillPolicy, block );
+	}
+	
+	@Override
 	public final void augmentMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy, boolean block) {
-		marketOrder(qty, parentTrade.getSide(), timeout, policy, block );
+		augmentMarket(qty, timeout, policy, null, block );
 	}
 	
 	@Override
 	public final void augmentMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy) {
-		marketOrder(qty, parentTrade.getSide(), timeout, policy, true );
+		augmentMarket(qty, timeout, policy, null, true );
+	}
+	
+	@Override
+	public final void augmentMarket( BigDecimal qty, FillPolicy fillPolicy, boolean block) {
+		augmentMarket(qty, parentTrade.getOrderTimeout(), 
+				parentTrade.getOrderTimeoutPolicy(), fillPolicy, block );
 	}
 	
 	@Override
 	public final void augmentMarket( BigDecimal qty, boolean block) {
-		marketOrder(qty, parentTrade.getSide(), parentTrade.getOrderTimeout(), parentTrade.getOrderTimeoutPolicy(), block );
+		augmentMarket(qty, parentTrade.getOrderTimeout(), 
+				parentTrade.getOrderTimeoutPolicy(), null, block );
 	}
 	
 	

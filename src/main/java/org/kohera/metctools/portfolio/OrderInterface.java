@@ -14,6 +14,12 @@ public interface OrderInterface {
 	
 	/**
 	 * Place a market order.
+	 */
+	void marketOrder( BigDecimal qty, Side side, long timeout, 
+			OrderTimeoutPolicy policy, FillPolicy fillPolicy, boolean block );
+	
+	/**
+	 * Place a market order.
 	 * 
 	 * @param qty 	number of shares 
 	 * @param side	side of the order
@@ -34,6 +40,17 @@ public interface OrderInterface {
 	 */
 	void marketOrder( BigDecimal qty, Side side, long timeout, 
 			OrderTimeoutPolicy policy );
+	
+	/**
+	 * Place a market order using the Trade's default timeout time and
+	 * OrderTimeoutPolicy with the given FillPolicy.
+	 * 
+	 * @param qty
+	 * @param side
+	 * @param policy
+	 * @param block
+	 */
+	void marketOrder( BigDecimal qty, Side side, FillPolicy policy, boolean block);
 	
 	/**
 	 * Place a market order using the Trade's default timeout time and
@@ -75,7 +92,14 @@ public interface OrderInterface {
 	/**
 	 * Close the position using a market order.
 	 */
-	void closeMarket( long timeout, OrderTimeoutPolicy policy, boolean block );
+	void closeMarket( long timeout, OrderTimeoutPolicy policy, 
+			FillPolicy fillPolicy, boolean block );
+	
+	/**
+	 * Close the position using a market order.
+	 */
+	void closeMarket( long timeout, OrderTimeoutPolicy policy, 
+			boolean block );
 	
 	/**
 	 * Close the position using a market order, and block until the
@@ -85,6 +109,13 @@ public interface OrderInterface {
 	 * @param policy
 	 */
 	void closeMarket( long timeout, OrderTimeoutPolicy policy );
+	
+	/**
+	 * 
+	 * @param policy
+	 * @param block
+	 */
+	void closeMarket( FillPolicy policy, boolean block );
 	
 	/**
 	 * Close the position using a market order, and the trade's default
@@ -107,7 +138,18 @@ public interface OrderInterface {
 	 * @param policy
 	 * @param block
 	 */
-	void longMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy, boolean block );
+	void longMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy, 
+			FillPolicy fillPolicy, boolean block );
+	/**
+	 * Go long.
+	 * 
+	 * @param qty
+	 * @param timeout
+	 * @param policy
+	 * @param block
+	 */
+	void longMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy, 
+			boolean block );
 	
 	/**
 	 * Go long and block until the transaction completes.
@@ -119,6 +161,13 @@ public interface OrderInterface {
 	void longMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy);
 	
 	/**
+	 * 
+	 * @param qty
+	 * @param block
+	 */
+	void longMarket( BigDecimal qty, FillPolicy policy, boolean block );
+	
+	/**
 	 * Go long using the Trade's default timeout time and OrderTimeoutPolicy.
 	 * 
 	 * @param qty
@@ -126,6 +175,17 @@ public interface OrderInterface {
 	 */
 	void longMarket( BigDecimal qty, boolean block );
 	
+	/**
+	 * Go short.
+	 * 
+	 * @param qty
+	 * @param timeout
+	 * @param policy
+	 * @param block
+	 */
+	void shortMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy,
+			FillPolicy fillPolicy, boolean block );
+
 	/**
 	 * Go short.
 	 * 
@@ -146,6 +206,14 @@ public interface OrderInterface {
 	void shortMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy);
 	
 	/**
+	 * 
+	 * @param qty
+	 * @param policy
+	 * @param block
+	 */
+	void shortMarket( BigDecimal qty, FillPolicy policy, boolean block );
+	
+	/**
 	 * Go short using the Trade's default timeout time and OrderTimeoutPolicy.
 	 * 
 	 * @param qty
@@ -159,7 +227,17 @@ public interface OrderInterface {
 	 * @param qty	the quantity must be less than Trade.getQuantity()
 	 * @param timeout
 	 */
-	void reduceMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy, boolean block);
+	void reduceMarket( BigDecimal qty, long timeout, 
+			OrderTimeoutPolicy policy, FillPolicy fillPolicy, boolean block);
+	
+	/**
+	 * Reduce a position.
+	 * 
+	 * @param qty	the quantity must be less than Trade.getQuantity()
+	 * @param timeout
+	 */
+	void reduceMarket( BigDecimal qty, long timeout, 
+			OrderTimeoutPolicy policy, boolean block);
 	
 	/**
 	 * Reduce a position and block until the transaction completes.
@@ -169,6 +247,14 @@ public interface OrderInterface {
 	 * @param policy
 	 */
 	void reduceMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy);
+	
+	/**
+	 * 
+	 * @param qty
+	 * @param policy
+	 * @param block
+	 */
+	void reduceMarket( BigDecimal qty, FillPolicy policy, boolean block);
 	
 	/**
 	 * Reduce a position using the Trade's default timeout time and OrderTimeoutPolicy.
@@ -186,7 +272,19 @@ public interface OrderInterface {
 	 * @param policy
 	 * @param block
 	 */
-	void augmentMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy, boolean block);
+	void augmentMarket( BigDecimal qty, long timeout, 
+			OrderTimeoutPolicy policy, FillPolicy fillPolicy, boolean block);
+	
+	/**
+	 * Augment a position.
+	 * 
+	 * @param qty
+	 * @param timeout
+	 * @param policy
+	 * @param block
+	 */
+	void augmentMarket( BigDecimal qty, long timeout, 
+			OrderTimeoutPolicy policy, boolean block);
 	
 	/**
 	 * Augment a position and block until the transaction completes.
@@ -196,6 +294,14 @@ public interface OrderInterface {
 	 * @param policy
 	 */
 	void augmentMarket( BigDecimal qty, long timeout, OrderTimeoutPolicy policy);
+	
+	/**
+	 * 
+	 * @param qty
+	 * @param policy
+	 * @param block
+	 */
+	void augmentMarket( BigDecimal qty, FillPolicy policy, boolean block);
 	
 	/**
 	 * Augment a position using the Trade's default timeout time and OrderTimeoutPolicy.

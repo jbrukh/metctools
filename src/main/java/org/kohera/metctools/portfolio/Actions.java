@@ -11,18 +11,19 @@ public class Actions {
 
 	// COMMON ACTIONS //
 	
-	public final static Action<Trade> CANCEL_ALL = new Action<Trade>() {
+	public final static Action CANCEL_ORDER = new Action() {
 		@Override
 		public void performAction(Trade trade) {
 			trade.order().cancel();
 		}
 	};
 
-	public final static Action<Trade> CLOSE_ALL = new Action<Trade>() {
+	public final static Action CLOSE_POSITION = new Action() {
 		@Override
 		public void performAction(Trade trade) {
 			trade.order().closeMarket(false);
 		}
 	};
+	
 	
 }

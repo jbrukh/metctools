@@ -30,7 +30,8 @@ final class PortfolioImpl implements Portfolio {
 	
 
 	/* logging */
-	private final static Logger logger = Logger.getLogger(PortfolioImpl.class);
+	private final static Logger logger = 
+		Logger.getLogger(PortfolioImpl.class);
 	
 	/**
 	 * Create a new PortfolioImpl instance.
@@ -103,9 +104,9 @@ final class PortfolioImpl implements Portfolio {
 	}
 
 	@Override
-	public void forEach(Action<Trade> action) {
-		for ( Trade t : trades.values() ) {
-			action.performAction(t);
+	public void forEach(Action action) {
+		for ( Trade trade : trades.values() ) {
+			action.performAction(trade);
 		}
 	}
 
@@ -155,7 +156,7 @@ final class PortfolioImpl implements Portfolio {
 	@Override
 	public void setFillPolicy(final FillPolicy policy) {
 		fillPolicy = policy;
-		forEach( new Action<Trade>() {
+		forEach( new Action() {
 			@Override
 			public void performAction(Trade trade) {
 				trade.setFillPolicy(policy);
@@ -171,7 +172,7 @@ final class PortfolioImpl implements Portfolio {
 	@Override
 	public void setRejectPolicy(final RejectPolicy policy) {
 		rejectPolicy = policy;
-		forEach( new Action<Trade>() {
+		forEach( new Action() {
 			@Override
 			public void performAction(Trade trade) {
 				trade.setRejectPolicy(policy);
@@ -187,7 +188,7 @@ final class PortfolioImpl implements Portfolio {
 	@Override
 	public void setOrderTimeoutPolicy(final OrderTimeoutPolicy policy) {
 		orderTimeoutPolicy = policy;
-		forEach( new Action<Trade>() {
+		forEach( new Action() {
 			@Override
 			public void performAction(Trade trade) {
 				trade.setOrderTimeoutPolicy(policy);
@@ -208,7 +209,7 @@ final class PortfolioImpl implements Portfolio {
 	@Override
 	public void setOrderTimeout(final long timeout) {
 		orderTimeout = Long.valueOf(timeout);
-		forEach( new Action<Trade>() {
+		forEach( new Action() {
 			@Override
 			public void performAction(Trade trade) {
 				trade.setOrderTimeout(timeout);

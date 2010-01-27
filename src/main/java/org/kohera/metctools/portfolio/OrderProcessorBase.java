@@ -26,7 +26,7 @@ class OrderProcessorBase {
 	protected final Trade parentTrade;			// ref. to the parent trade
 
 	private Thread		outThr;					// outgoing thread that sends orders and may block
-	
+	private FillPolicy	fillPolicy;
 
 	/* logging */
 	private final static Logger logger = 
@@ -124,7 +124,7 @@ class OrderProcessorBase {
 	 */
 	synchronized protected final void sendOrder(final OrderSingle order, 
 			final long timeout, final OrderTimeoutPolicy policy,
-			final boolean block) {
+			final FillPolicy fillPolicy, final boolean block) {
 
 		logger.trace("--- Starting the out thread...");
 
@@ -141,6 +141,9 @@ class OrderProcessorBase {
 					/* get the parent */
 					PortfolioStrategy parent = parentTrade.getParentStrategy();
 					pendingOrderId = order.getOrderID();
+					OrderProcessorBase.this.fillPolicy =
+						fillPolicy;
+					
 					parent.getFramework().send(order);
 
 					/* logging */
@@ -205,13 +208,20 @@ class OrderProcessorBase {
 	 * Will unlock the outgoing thread, which will complete.
 	 */
 	public final void orderSuccess() {
+		
+		if ( fillPolicy != null ) {
+			fillPolicy.onFill(parentTrade.getParentStrategy(), 
+					pendingOrderId, parentTrade);
+			fillPolicy = null;
+		}
+
 		pendingOrderId = null;
 
 		if ( cancelOrderId!=null) {
 			logger.warn(">>> Failed to execute cancel order " + cancelOrderId );
 			cancelOrderId = null;
 		}
-
+		
 		synchronized(transactionLock) {
 			transactionLock.notify();
 		}
@@ -226,7 +236,17 @@ class OrderProcessorBase {
 
 	public final void orderFailure() {
 		logger.trace(" --- Order transaction seems to have failed...");
-		orderSuccess();
+		
+		pendingOrderId = null;
+
+		if ( cancelOrderId!=null) {
+			logger.warn(">>> Failed to execute cancel order " + cancelOrderId );
+			cancelOrderId = null;
+		}
+
+		synchronized(transactionLock) {
+			transactionLock.notify();
+		}
 	}
 	
 	public final void disrupt() {

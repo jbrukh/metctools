@@ -7,8 +7,8 @@ package org.kohera.metctools.portfolio;
  *
  * @param <T>
  */
-public interface Action<T> {
+public interface Action {
 	
-	public void performAction( T obj );
+	public void performAction( Trade trade );
 
 }
