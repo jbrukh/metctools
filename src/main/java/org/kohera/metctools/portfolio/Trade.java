@@ -496,7 +496,7 @@ public class Trade implements Serializable {
 	 */
 	public final BigDecimal getProfitLoss() {
 		BigDecimal last = getLastPrice();
-		if ( last == null || entryPrice == null ) {
+		if ( last == null || entryPrice == null || entryPrice.intValue()==0 ) {
 			return BigDecimal.ZERO;
 		}
 		return last.divide(entryPrice,BigDecimal.ROUND_HALF_UP)
