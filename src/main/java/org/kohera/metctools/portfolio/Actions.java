@@ -21,7 +21,7 @@ public class Actions {
 	public final static Action CLOSE_POSITION = new Action() {
 		@Override
 		public void performAction(Trade trade) {
-			trade.order().closeMarket(false);
+			trade.order().closeMarket(true);
 		}
 	};
 	
