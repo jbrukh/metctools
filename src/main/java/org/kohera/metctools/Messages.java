@@ -25,8 +25,8 @@ public class Messages {
 		return ">>> " + trade + ": Filled order " + orderId + ".";
 	}
 	
-	public static final String MSG_ON_TIMEOUT_WARN(long timeout) {
-		return ">>> Could not fill order in " + timeout + " ms. (Ignoring.)";
+	public static final String MSG_ON_TIMEOUT_WARN(long timeout, Trade trade) {
+		return ">>> " + trade + ": Could not fill order in " + timeout + " ms. (Ignoring.)";
 	}
 	
 	public static final String MSG_ON_TIMEOUT_CANCEL(long timeout) {

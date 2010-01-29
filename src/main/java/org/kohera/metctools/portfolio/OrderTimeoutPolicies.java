@@ -28,7 +28,7 @@ public final class OrderTimeoutPolicies {
 		
 			/* default message */
 			Logger.getLogger(PortfolioStrategy.class).warn(
-					Messages.MSG_ON_TIMEOUT_WARN(timeout)
+					Messages.MSG_ON_TIMEOUT_WARN(timeout, trade)
 					);
 		
 		}		

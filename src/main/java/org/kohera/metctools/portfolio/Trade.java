@@ -342,7 +342,7 @@ public class Trade implements Serializable {
 	 * 
 	 * @return
 	 */
-	public final PortfolioStrategy getParentStrategy() {
+	public PortfolioStrategy getParentStrategy() {
 		if ( parentPortfolio != null ) {
 			return parentPortfolio.getParentStrategy();
 		} return null;
