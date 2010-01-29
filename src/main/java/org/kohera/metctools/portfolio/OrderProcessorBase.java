@@ -14,7 +14,7 @@ class OrderProcessorBase {
 	////////////
 	
 	/* used for synchronization of the order-sending methods */
-	private static final Object transactionLock 
+	private final Object transactionLock 
 			= new Object();
 
 	private BrokerID 	brokerId;				// broker id going to the OrderBuilder

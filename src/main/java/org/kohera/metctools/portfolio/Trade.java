@@ -328,6 +328,10 @@ public class Trade implements Serializable {
 		return entryPrice;
 	}
 	
+	public final Logger getLogger() {
+		return logger;
+	}
+	
 	/**
 	 * Return the order interface.
 	 * 
@@ -499,8 +503,9 @@ public class Trade implements Serializable {
 		if ( last == null || entryPrice == null || entryPrice.intValue()==0 ) {
 			return BigDecimal.ZERO;
 		}
-		return last.divide(entryPrice,BigDecimal.ROUND_HALF_UP)
-						.subtract(BigDecimal.valueOf(1));
+		return last.divide(entryPrice.setScale(8),BigDecimal.ROUND_HALF_UP)
+						.subtract(BigDecimal.valueOf(1))
+						.multiply(BigDecimal.valueOf(100)).setScale(4);
 	}
 	
 	@Override

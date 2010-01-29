@@ -323,13 +323,13 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		}
 	
 		/* now, let's sync */
-		Set<String> symbols = new HashSet<String>();
+		//Set<String> symbols = new HashSet<String>();
 		for ( PositionKey k : positions.keySet() ) {
 			final String symbol = k.getSymbol();
 			final String account = k.getAccount();
 
 			if ( account.equals(portfolio.getAccount()) ) {
-				symbols.add(symbol);
+				//symbols.add(symbol);
 				if ( portfolio.hasTrade(symbol) ) {
 					Trade trade = portfolio.getTrade(symbol);
 					int pos = positions.get(k).intValue();
@@ -339,12 +339,12 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 					trade.overrideQuantity(qty);
 					trade.overrideSide(side);
 					
-					logger.debug(">>> Syncing " + symbol + " to position " + pos + "." );	
+					logger.info(">>> Syncing " + symbol + " to position " + pos + "." );	
 				}
 			}
 		}
 		
-		portfolio.getSymbols().retainAll(symbols);
+		//portfolio.getSymbols().retainAll(symbols);
 		
 	}
 	

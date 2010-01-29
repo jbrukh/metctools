@@ -71,11 +71,21 @@ final class PortfolioImpl implements Portfolio {
 	@Override
 	public void addTrade(Trade trade) {
 		
-		if ( trades.containsKey(trade.getSymbol())) {
-			logger.error(">>> Trade for symbol " + 
-					trade.getSymbol() + " already exists.");
-			return;
-		}
+		if ( trade == null ) return;
+		String symbol = trade.getSymbol();
+		
+		/* if the trade exists, but is not open, you can
+		 * replace it.  Otherwise, there is an error.
+		 */
+		if ( trades.containsKey(symbol) ) {
+			if ( trades.get(symbol).isOpen() ) {
+				logger.error(">>> Trade for symbol " + 
+						symbol + " already exists and is open.");
+				return;
+			}
+			logger.warn(">>> Removing current zero-position trade for " + 
+					symbol + " and replacing...");
+		} 
 
 		/* set the policies for the trades from the portfolio,
 		 * unless they are already customized
@@ -97,7 +107,7 @@ final class PortfolioImpl implements Portfolio {
 		}
 		
 		trade.setParentPortfolio(this);
-		trades.put(trade.getSymbol(),trade);
+		trades.put(symbol,trade);
 		
 		/* logging */
 		logger.trace(">>> Added trade to portfolio: " + trade);
