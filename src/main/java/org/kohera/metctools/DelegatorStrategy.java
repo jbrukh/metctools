@@ -266,7 +266,7 @@ public class DelegatorStrategy extends Strategy
 	 */
 	public BrokerStatus getBrokerStatus( BrokerID brokerId ) {
 		for ( BrokerStatus status : getBrokers() ) {
-			if ( status.getId()==brokerId ) {
+			if ( brokerId.equals(status.getId()) ) {
 				return status;
 			}
 		} return null;

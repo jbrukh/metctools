@@ -89,7 +89,9 @@ public class OrderProcessor extends OrderProcessorBase
 			FillPolicy fillPolicy, boolean block ) {		
 
 		/* if there is pending position, then cancel it */
-		cancel(true);
+		if ( isPending() ) {
+			cancel(true);
+		}
 		
 		/* do nothing for non-open trades */
 		if ( !parentTrade.isOpen()) {

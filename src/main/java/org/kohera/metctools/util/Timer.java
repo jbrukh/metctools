@@ -25,7 +25,7 @@ public class Timer implements Serializable {
 	 * Interface for specifying generic Tasks.
 	 *
 	 */
-	public interface Task {
+	public interface Task extends Serializable {
 		public void performTask();
 	}
 	

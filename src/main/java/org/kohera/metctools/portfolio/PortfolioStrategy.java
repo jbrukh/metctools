@@ -273,10 +273,10 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 			portfolio = (PortfolioImpl)in.readObject();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
-			logger.error(">>> Serialization error. (" + e.getMessage() + ").");
+			logger.error(">>> De-serialization error. (" + e.getMessage() + ").");
 			return false;
 		} catch (IOException e ) {
-			logger.error(">>> Could not serialize portfolio. (" + e.getMessage() + ")");
+			logger.error(">>> Could not deserialize portfolio. (" + e.getMessage() + ")");
 			return false;
 		} finally {
 			try {

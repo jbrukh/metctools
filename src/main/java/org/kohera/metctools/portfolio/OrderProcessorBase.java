@@ -1,5 +1,7 @@
 package org.kohera.metctools.portfolio;
 
+import java.io.Serializable;
+
 import org.apache.log4j.Logger;
 import org.kohera.metctools.util.OrderBuilder;
 import org.marketcetera.trade.OrderCancel;
@@ -15,9 +17,9 @@ class OrderProcessorBase {
 
 	/* used for synchronization of the order-sending methods */
 	private final Object transactionLock 
-	= new Object();
+		= new Object();
 	private final Object cancelLock 
-	= new Object();
+		= new Object();
 
 
 	private BrokerID 	brokerId;				// broker id going to the OrderBuilder
@@ -188,9 +190,7 @@ class OrderProcessorBase {
 	}
 
 	protected final void cancelOrder(final boolean block) {
-		System.out.println("Canceling order...");
 		synchronized(cancelLock) {
-			System.out.println("Canceling order...");
 			if ( !isPending() ) {
 				logger.warn(">>> " + parentTrade + 
 						": There is no pending order to cancel.");

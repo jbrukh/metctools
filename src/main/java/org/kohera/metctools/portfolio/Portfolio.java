@@ -218,6 +218,8 @@ public interface Portfolio extends Serializable {
 	 * @return
 	 */
 	public boolean isAccountInfoSet();
+
+	void wipe();
 	
 
 }

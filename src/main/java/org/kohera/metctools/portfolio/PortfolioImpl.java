@@ -273,4 +273,8 @@ final class PortfolioImpl implements Portfolio {
 		parentStrategy = parent;
 	}
 
+	@Override
+	public void wipe() {
+		trades.clear();
+	}
 }

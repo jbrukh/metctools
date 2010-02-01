@@ -14,7 +14,9 @@ public class Actions {
 	public final static Action CANCEL_ORDER = new Action() {
 		@Override
 		public void performAction(Trade trade) {
-			trade.order().cancel();
+			if ( trade.isPending() ) {
+				trade.order().cancel();
+			}
 		}
 	};
 

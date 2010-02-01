@@ -1,5 +1,8 @@
 package org.kohera.metctools.portfolio;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
@@ -580,6 +583,8 @@ public class Trade implements Serializable {
 	protected void onBidEvent( BidEvent event ) { }
 	protected void onAskEvent( AskEvent event ) { }
 	
+	protected void onExecutionReport( ExecutionReport report) { }
+	
 
 	/**
 	 * Processes cancel rejections.
@@ -691,6 +696,8 @@ public class Trade implements Serializable {
 			break;
 		}
 		
+		/* finally let the subclasses do something */
+		onExecutionReport(report);
 	}
 	
 	/**
@@ -852,8 +859,12 @@ public class Trade implements Serializable {
 		rejectPolicy = RejectPolicies.ON_REJECT_WARN;
 		orderTimeout = DEFAULT_ORDER_TIMEOUT;
 		
-		orderProcessor = new OrderProcessor(this);
+		initOrderProcessor();
 		setAccountInfo();
+	}
+	
+	private final void initOrderProcessor() {
+		orderProcessor = new OrderProcessor(this);
 	}
 	
 	/**
@@ -904,4 +915,15 @@ public class Trade implements Serializable {
 		side = pendingSide = Side.NONE;
 	}
 	
+	// SERIALIZATION //
+	
+	private void writeObject(ObjectOutputStream out) throws IOException {
+		out.defaultWriteObject();
+	}
+	
+	private void readObject(ObjectInputStream in) 
+	 	throws IOException, ClassNotFoundException {
+		in.defaultReadObject();
+		initOrderProcessor(); 
+	 }
 }
