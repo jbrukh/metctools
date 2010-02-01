@@ -67,9 +67,7 @@ public class OrderProcessor extends OrderProcessorBase
 
 	@Override
 	public final void cancel( final boolean block ) {
-		if ( isPending() ) {
-			cancelOrder(block);
-		}
+		cancelOrder(block);
 	}
 
 	@Override

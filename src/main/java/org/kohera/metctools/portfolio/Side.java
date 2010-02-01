@@ -71,6 +71,10 @@ public enum Side {
 		return BigDecimal.valueOf(this.value());
 	}
 	
+	public String toSymbol() {
+		return this==BUY? "+" : (this==SELL? "-" : "");
+	}
+	
 	/**
 	 * Returns the opposite side of this side.
 	 * @return

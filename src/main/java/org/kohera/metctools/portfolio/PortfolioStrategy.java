@@ -18,6 +18,7 @@ import org.kohera.metctools.Messages;
 import org.kohera.metctools.delegate.AskDelegate;
 import org.kohera.metctools.delegate.BidDelegate;
 import org.kohera.metctools.delegate.ExecutionReportDelegate;
+import org.kohera.metctools.delegate.OrderCancelRejectDelegate;
 import org.kohera.metctools.delegate.TradeDelegate;
 import org.marketcetera.client.ClientInitException;
 import org.marketcetera.core.position.PositionKey;
@@ -25,7 +26,10 @@ import org.marketcetera.event.AskEvent;
 import org.marketcetera.event.BidEvent;
 import org.marketcetera.event.TradeEvent;
 import org.marketcetera.marketdata.MarketDataRequest;
+import org.marketcetera.module.ModuleStateException;
 import org.marketcetera.trade.ExecutionReport;
+import org.marketcetera.trade.OrderCancelReject;
+import org.marketcetera.trade.OrderID;
 
 
 /**
@@ -62,7 +66,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 	 *
 	 */
 	class TradeRouter implements ExecutionReportDelegate, TradeDelegate, 
-		BidDelegate, AskDelegate {
+		BidDelegate, AskDelegate, OrderCancelRejectDelegate {
 		
 		@Override
 		public void onExecutionReport(DelegatorStrategy sender,
@@ -101,6 +105,20 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		public void onAsk(DelegatorStrategy sender, AskEvent askEvent) {
 			// TODO Auto-generated method stub
 			
+		}
+
+		@Override
+		public void onCancelReject(DelegatorStrategy sender,
+				OrderCancelReject reject) {
+			OrderID orderId = reject.getOriginalOrderID();
+			if ( portfolio!=null) {
+				for ( Trade trade : portfolio.getTrades() ) {
+					/* if there is a trade with such a pending order */
+					if ( orderId.equals(trade.getPendingOrderId())) {
+						trade.acceptCancelReject(reject);
+					}
+				}
+			}
 		}
 		
 	}
@@ -178,7 +196,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 
 	public void stopMarketData() {
 		if (dataRequestId!=null && dataRequestId>0) {
-			cancelDataRequest(dataRequestId);
+				cancelDataRequest(dataRequestId);
 		} dataRequestId = null;
 	}
 

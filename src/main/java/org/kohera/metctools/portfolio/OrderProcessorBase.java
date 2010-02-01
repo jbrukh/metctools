@@ -9,13 +9,16 @@ import org.marketcetera.trade.BrokerID;
 
 class OrderProcessorBase {
 
-	  ////////////
-	 // FIELDS //
 	////////////
-	
+	// FIELDS //
+	////////////
+
 	/* used for synchronization of the order-sending methods */
 	private final Object transactionLock 
-			= new Object();
+	= new Object();
+	private final Object cancelLock 
+	= new Object();
+
 
 	private BrokerID 	brokerId;				// broker id going to the OrderBuilder
 	private String 		account;				// account string going to the OrderBuilder
@@ -32,10 +35,10 @@ class OrderProcessorBase {
 	private final static Logger logger = 
 		Logger.getLogger(OrderProcessorBase.class);
 
-  	  //////////////////
-	 // CONSTRUCTORS //
 	//////////////////
-	
+	// CONSTRUCTORS //
+	//////////////////
+
 	/**
 	 * Get a new instance.
 	 * 
@@ -59,10 +62,10 @@ class OrderProcessorBase {
 		setAccountInfo(brokerId, account);
 	}
 
-	  /////////////////////////
-	 // GETTERS AND SETTERS //
-    /////////////////////////
-	
+	/////////////////////////
+	// GETTERS AND SETTERS //
+	/////////////////////////
+
 	/**
 	 * Set the account information for this OrderProcessor.
 	 * 
@@ -113,7 +116,7 @@ class OrderProcessorBase {
 		return pendingOrderId!=null;
 	}
 
-	
+
 	// PRIVATE METHODS //
 
 	/**
@@ -143,7 +146,7 @@ class OrderProcessorBase {
 					pendingOrderId = order.getOrderID();
 					OrderProcessorBase.this.fillPolicy =
 						fillPolicy;
-					
+
 					parent.getFramework().send(order);
 
 					/* logging */
@@ -185,70 +188,83 @@ class OrderProcessorBase {
 	}
 
 	protected final void cancelOrder(final boolean block) {
-		if ( !isPending() ) {
-			logger.warn(">>> " + parentTrade + ": There is no pending order to cancel.");
-		}
-
-		OrderCancel orderCancel = parentTrade.getParentStrategy().getFramework()
-		.cancelOrder(pendingOrderId, true);
-		cancelOrderId = orderCancel.getOrderID();
-		
-		logger.debug(">>> Sending cancel order " + cancelOrderId + " to cancel " + pendingOrderId );
-
-		if (block) {
-			synchronized(transactionLock) {
-				try {
-					transactionLock.wait();
-				} catch (InterruptedException e) { }
+		System.out.println("Canceling order...");
+		synchronized(cancelLock) {
+			System.out.println("Canceling order...");
+			if ( !isPending() ) {
+				logger.warn(">>> " + parentTrade + 
+						": There is no pending order to cancel.");
+				return;
 			}
-		}
+
+			OrderCancel orderCancel = parentTrade.getParentStrategy().getFramework()
+					.cancelOrder(pendingOrderId, true);
+			cancelOrderId = orderCancel.getOrderID();
+
+			logger.debug(">>> Sending cancel order " + cancelOrderId + " to cancel " + pendingOrderId );
+
+
+			if (block) {
+					try {
+						cancelLock.wait();
+					} catch (InterruptedException e) { }
+				}
+			}
 	}
 
 	/**
 	 * Will unlock the outgoing thread, which will complete.
 	 */
 	public final void orderSuccess() {
-		
-		if ( fillPolicy != null ) {
-			fillPolicy.onFill(parentTrade.getParentStrategy(), 
-					pendingOrderId, parentTrade);
-			fillPolicy = null;
-		}
-
-		pendingOrderId = null;
-
-		if ( cancelOrderId!=null) {
-			logger.warn(">>> Failed to execute cancel order " + cancelOrderId );
-			cancelOrderId = null;
-		}
-		
 		synchronized(transactionLock) {
+			if ( fillPolicy != null ) {
+				fillPolicy.onFill(parentTrade.getParentStrategy(), 
+						pendingOrderId, parentTrade);
+				fillPolicy = null;
+			}
+
+			pendingOrderId = null;
+
+			if ( cancelOrderId!=null) {
+				logger.warn(">>> Failed to execute cancel order " + cancelOrderId );
+				cancelOrderId = null;
+			}
+
+
 			transactionLock.notify();
 		}
 	}
 
 	public final void cancelSuccess() {
-		cancelOrderId = pendingOrderId = null;
-		synchronized(transactionLock) {
-			transactionLock.notify();
-		}
-	}
-
-	public final void orderFailure() {
-		logger.trace(" --- Order transaction seems to have failed...");
-		
-		pendingOrderId = null;
-
-		if ( cancelOrderId!=null) {
-			logger.warn(">>> Failed to execute cancel order " + cancelOrderId );
-			cancelOrderId = null;
-		}
-
-		synchronized(transactionLock) {
-			transactionLock.notify();
+		synchronized(cancelLock) {
+			System.out.println("Cancel success");
+			cancelOrderId = pendingOrderId = null;
+			cancelLock.notify();
+			synchronized(transactionLock) {
+				transactionLock.notify();
+			}
 		}
 	}
 	
+	public final void cancelFailure() {
+		cancelSuccess(); // do the same thing
+	}
+
+	public final void orderFailure() {
+		synchronized(transactionLock) {
+			logger.trace(" --- Order transaction seems to have failed...");
+
+			pendingOrderId = null;
+
+			if ( cancelOrderId!=null) {
+				logger.warn(">>> Failed to execute cancel order " + cancelOrderId );
+				cancelOrderId = null;
+			}
+
+			transactionLock.notify();
+		}
+	}
+
 	public final void disrupt() {
 		outThr.interrupt();
 	}

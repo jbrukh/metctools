@@ -11,6 +11,7 @@ import org.marketcetera.event.BidEvent;
 import org.marketcetera.event.TradeEvent;
 import org.marketcetera.trade.BrokerID;
 import org.marketcetera.trade.ExecutionReport;
+import org.marketcetera.trade.OrderCancelReject;
 import org.marketcetera.trade.OrderID;
 import org.marketcetera.trade.OrderStatus;
 
@@ -503,9 +504,11 @@ public class Trade implements Serializable {
 		if ( last == null || entryPrice == null || entryPrice.intValue()==0 ) {
 			return BigDecimal.ZERO;
 		}
-		return last.divide(entryPrice.setScale(8),BigDecimal.ROUND_HALF_UP)
+		return last.setScale(8,BigDecimal.ROUND_HALF_UP)
+						.divide(entryPrice,BigDecimal.ROUND_HALF_UP)
 						.subtract(BigDecimal.valueOf(1))
-						.multiply(BigDecimal.valueOf(100)).setScale(4);
+						.multiply(BigDecimal.valueOf(100))
+						.setScale(4, BigDecimal.ROUND_HALF_UP );
 	}
 	
 	@Override
@@ -578,6 +581,25 @@ public class Trade implements Serializable {
 	protected void onAskEvent( AskEvent event ) { }
 	
 
+	/**
+	 * Processes cancel rejections.
+	 * 
+	 * Because cancel reject messages come in through a different path
+	 * than execution reports and do not contain symbol information, they
+	 * are routed through the parent PortfolioStrategy's TradeRouter.
+	 * 
+	 * The TradeRouter will try to search for a Trade in the Portfolio that
+	 * contains a pendingOrderId that matches this reject message.  If no
+	 * such Trade exists, execution never reaches this method.
+	 *
+	 * @param reject
+	 */
+	public final void acceptCancelReject( OrderCancelReject reject ) {
+		logger.info(">>> " + this + ": The cancel order " + reject.getOrderID() +
+				" to cancel " + reject.getOriginalOrderID() + " has been REJECTED.");
+		orderProcessor.cancelFailure();
+	}
+	
 	/**
 	 * Adjusts the trade information based on an incoming execution report.
 	 * 
