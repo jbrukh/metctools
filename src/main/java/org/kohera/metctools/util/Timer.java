@@ -61,7 +61,7 @@ public class Timer implements Serializable {
 				/* remove yourself from the list */
 				threads.remove(this);
 			} catch ( InterruptedException e) {
-				System.err.println("interrupted " + this.toString() );
+				//System.err.println("interrupted " + this.toString() );
 			}
 		}
 	}

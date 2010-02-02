@@ -47,8 +47,8 @@ public enum Side {
 	}
 	
 	public static Side fromInt( Integer n ) {
-		if ( n==-1 ) return SELL;
-		if ( n==1 ) return BUY;
+		if ( Math.signum(n)==-1 ) return SELL;
+		if ( Math.signum(n)==1 ) return BUY;
 		return NONE;
 	}
 	

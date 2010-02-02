@@ -77,7 +77,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 					.acceptExecutionReport(PortfolioStrategy.this, report);
 			} else {
 				// TODO: clean up
-				logger.warn(">>> Received external execution report. (Ignoring.)");
+				logger.debug(">>> Received external execution report. (Ignoring.)");
 				logger.trace(">>> Report: " + report );
 			}
 		}
