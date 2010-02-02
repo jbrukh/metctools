@@ -491,6 +491,14 @@ public class Trade implements Serializable {
 		return side.polarize(getNetQty());
 	}
 	
+	public final BigDecimal getSignedCumulativeQty() {
+		return side.polarize(getCumulativeQty());
+	}
+	
+	public final BigDecimal getSignedLeavesQty() {
+		return side.polarize(getLeavesQty());
+	}
+	
 	/**
 	 * Returns the profit-loss for this trade.
 	 * 
@@ -688,10 +696,11 @@ public class Trade implements Serializable {
 			break;
 		case PendingNew:
 		case PendingCancel:
+			orderStatus = report.getOrderStatus();
 			break;
 		default:
 			logger.error(
-					">>>\tExecution report status is " +
+					">>> Execution report status is " +
 					orderStatus + ", which is not implemented.");
 			break;
 		}
@@ -740,8 +749,8 @@ public class Trade implements Serializable {
 		}
 		
 		/* logging */
-		logger.info(">>>\t" + this + ": Partial fill on " + report.getOrderID() + ".");
-		logger.trace(">>>\t" + report);
+		logger.info(">>> " + this + ": Partial fill on " + report.getOrderID() + ".");
+		logger.trace(">>> " + report);
 	}
 	
 	/**

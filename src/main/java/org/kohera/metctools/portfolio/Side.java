@@ -90,6 +90,7 @@ public enum Side {
 	 * @return
 	 */
 	public BigDecimal polarize(BigDecimal value) {
+		if ( value==null) value = BigDecimal.ZERO;
 		return value.multiply(toBigDecimal());
 	}
 	
