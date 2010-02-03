@@ -238,7 +238,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		}
 		
 		logger.info(">>> Serialized portfolio to " + file);
-		logger.debug(portfolio.toString());
+		logger.trace(portfolio.toString());
 	}
 
 	/**

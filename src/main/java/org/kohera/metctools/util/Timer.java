@@ -8,6 +8,8 @@ import java.util.List;
 /**
  * Generic Timer class for scheduling future tasks.
  * 
+ * Please note: this does not guarantee real time.
+ * 
  * @author Jake Brukhman
  *
  */
@@ -61,7 +63,7 @@ public class Timer implements Serializable {
 				/* remove yourself from the list */
 				threads.remove(this);
 			} catch ( InterruptedException e) {
-				//System.err.println("interrupted " + this.toString() );
+			
 			}
 		}
 	}
