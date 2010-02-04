@@ -19,6 +19,15 @@ public class Actions {
 			}
 		}
 	};
+	
+	public final static Action CANCEL_ORDER_ASYNC = new Action() {
+		@Override
+		public void performAction(Trade trade) {
+			if ( trade.isPending() ) {
+				trade.order().cancel(false);
+			}
+		}
+	};
 
 	public final static Action CLOSE_POSITION = new Action() {
 		@Override
