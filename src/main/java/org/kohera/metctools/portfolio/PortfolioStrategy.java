@@ -237,7 +237,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 			}
 		}
 		
-		logger.info(">>> Serialized portfolio to " + file);
+		logger.debug(">>> Serialized portfolio to " + file + ".");
 		logger.trace(portfolio.toString());
 	}
 
@@ -301,8 +301,8 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 			}
 		});
 		
-		logger.info(">>> Deserialized portfolio from " + file + ".");
-		logger.debug(portfolio.toString());
+		logger.debug(">>> Deserialized portfolio from " + file + ".");
+		logger.trace(portfolio.toString());
 		
 		return true;
 	}
