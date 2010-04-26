@@ -126,7 +126,7 @@ public class DelegatorStrategy extends Strategy
 			return DelegatorStrategy.this.requestCEPData(statements, source);
 		}
 		
-		public int requestProcessedMarketData( String request, String[] statements, String cepSource) {
+		public int requestProcessedMarketData( MarketDataRequest request, String[] statements, String cepSource) {
 			return DelegatorStrategy.this.requestProcessedMarketData(request, statements, cepSource);
 		}
 		
