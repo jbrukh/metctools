@@ -1,6 +1,8 @@
 package org.kohera.metctools.delegate;
 
 import java.lang.reflect.Method;
+import java.util.AbstractList;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -108,9 +110,11 @@ public final class Delegator {
 	 * @param delegate
 	 * @return
 	 */
-	private List<Class<?>> getInterfaces( EventDelegate delegate ) {	
-		List<Class<?>> interfaces = 
-			Arrays.asList(delegate.getClass().getInterfaces());
+	private List<Class<?>> getInterfaces( EventDelegate delegate ) {
+		ArrayList<Class<?>> interfaces = new ArrayList<Class<?>>();
+		for ( Class<?> clazz : delegate.getClass().getInterfaces() ) {
+			interfaces.add(clazz);
+		}
 		interfaces.retainAll(EVENTS_COLLECTION);
 		return interfaces;
 	}

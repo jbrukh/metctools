@@ -171,7 +171,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		return portfolio;
 	}
 	
-	public void startMarketData() {		
+	public MarketDataRequest startMarketData() {		
 		if ( !dataProviderIsSet() ) {
 			throw new RuntimeException(Messages.MSG_DATA_PROVIDER_NOT_SET);
 		}
@@ -181,7 +181,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		
 		if ( symbols.length < 1 ) {
 			logger.warn(">>> Skipping market data (no symbols in portfolio).");
-			return;
+			return null;
 		}
 		
 		logger.info(">>> Starting market data...");
@@ -192,6 +192,7 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 										.withContent("LATEST_TICK");
 		dataRequestId = requestMarketData(request);
 		logger.info(">>> Market data id: " + dataRequestId );
+		return request;
 	}
 
 	public void stopMarketData() {
@@ -200,6 +201,10 @@ public abstract class PortfolioStrategy extends DelegatorStrategy {
 		} dataRequestId = null;
 	}
 
+	public Integer getDataRequestId() {
+		return dataRequestId;
+	}
+	
 	private boolean dataProviderIsSet() {
 		return dataProvider!=null;
 	}
