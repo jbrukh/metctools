@@ -16,7 +16,7 @@
   
   <groupId>org.kohera</groupId>
   <artifactId>metctools</artifactId>
-  <version>1.1-SNAPSHOT</version>
+  <version>1.1.6</version>
   <packaging>jar</packaging>
 
   <name>Kohera Metctools</name>
@@ -28,7 +28,6 @@
    <dependencies>
 
     <!-- Compile. -->
-    <!-- 
     <dependency>
       <groupId>${mvn.public.package}</groupId>
       <artifactId>core</artifactId>
@@ -51,14 +50,14 @@
       <groupId>${mvn.public.package}</groupId>
       <artifactId>strategyagent</artifactId>
 	  <version>[${mvn.marketcetera.version}]</version>
-    </dependency> -->
+    </dependency>
 	
-<!--	<dependency>
+    <dependency>
       <groupId>log4j</groupId>
       <artifactId>log4j</artifactId>
     </dependency>
--->	
-	<dependency>
+	
+    <dependency>
       <groupId>javax.activation</groupId>
       <artifactId>activation</artifactId>
       <version>1.1</version>
