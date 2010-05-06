@@ -697,6 +697,7 @@ public class Trade implements Serializable {
 			processRejected(report);
 			break;
 		case PendingNew:
+			break;
 		case PendingCancel:
 			orderStatus = report.getOrderStatus();
 			break;
