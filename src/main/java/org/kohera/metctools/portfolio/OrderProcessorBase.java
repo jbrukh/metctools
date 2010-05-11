@@ -33,6 +33,8 @@ class OrderProcessorBase {
 	private Thread		outThr;					// outgoing thread that sends orders and may block
 	private FillPolicy	fillPolicy;
 
+	private FIXPostProcessor postProcessor;
+	
 	/* logging */
 	private final static Logger logger = 
 		Logger.getLogger(OrderProcessorBase.class);
@@ -81,6 +83,19 @@ class OrderProcessorBase {
 		orderBuilder.setDefaultBrokerId(brokerId);
 	}
 
+	/**
+	 * Set an unobtrusive FIX post-processor to process outgoing messages.
+	 * 
+	 * This is implemented in this way to overcome some of the limitations of
+	 * the Metc framework.  For instance, there is no way to get rid of the outgoing
+	 * SecurityType field.
+	 * 
+	 * @param postProcessor
+	 */
+	public final void setFIXPostProcessor( FIXPostProcessor postProcessor ) {
+		this.postProcessor = postProcessor;
+	}
+	
 	/**
 	 * Get the order builder.
 	 * 
@@ -143,6 +158,11 @@ class OrderProcessorBase {
 					/* make sure all fields are available */
 					checkGoodToSend();
 
+					/* post-process the message, if applicable */
+					if ( postProcessor != null ) {
+						postProcessor.postProcess(order);
+					}
+					
 					/* get the parent */
 					PortfolioStrategy parent = parentTrade.getParentStrategy();
 					pendingOrderId = order.getOrderID();
